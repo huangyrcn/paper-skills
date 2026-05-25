@@ -1,12 +1,9 @@
 ---
 name: paper-resolve
 description: >
-  Resolve an ambiguous or partial paper reference into a canonical paper identity
-  by first determining the canonical title through web search. Use this skill whenever
-  the user gives a paper title, DOI, arXiv id, OpenReview URL, paper URL, local PDF,
-  or fuzzy paper description and the system first needs to figure out exactly which
-  paper it is. Prefer this skill before any paper download, raw acquisition, or note
-  generation work.
+  When: 用户提到一篇论文——标题、DOI、arXiv 链接、OpenReview URL、模糊描述都行。
+  How: 通过搜索确定具体是哪篇论文，收集标识符。
+  Output: `$PAPERS_DIR/{folder_slug}/metadata.yaml`。
 ---
 
 # Paper Resolve

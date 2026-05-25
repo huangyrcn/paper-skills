@@ -1,9 +1,9 @@
 ---
 name: paper-repo
 description: >
-  Discover the official or community implementation repository for a resolved paper.
-  Use this skill after paper-acquire when the user wants to find code, verify repo
-  authenticity, or check if an implementation exists for a paper.
+  When: 已经确定了是哪篇论文，需要找它的代码仓库。
+  How: 从论文内容提取线索，搜索 GitHub，验证匹配度。
+  Output: 仓库信息写入 `$PAPERS_DIR/{folder_slug}/metadata.yaml` 的 `repo_search` 字段；高置信时自动 clone 到 `repo/`。
 argument-hint: "<folder_slug> | <metadata_path>"
 allowed-tools: Bash, Read, Edit, Write
 ---

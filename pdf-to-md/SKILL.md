@@ -1,10 +1,9 @@
 ---
 name: pdf-to-md
 description: >
-  Convert a PDF into high-quality Markdown through the MinerU API VLM pipeline.
-  Use this skill whenever the user wants PDF-to-Markdown conversion, OCR-like extraction,
-  paper text extraction, or Markdown plus extracted images from a PDF. This skill supports
-  the API backend only and always uses the high-quality VLM model configuration.
+  When: 有一个 PDF 文件需要转成 markdown。
+  How: 调用 MinerU API VLM 管线，处理公式、表格、混合排版。
+  Output: 与 PDF 同目录的 `.md` 文件和 `_images/` 文件夹。
 argument-hint: "<pdf_path> [-l lang]"
 allowed-tools: Bash
 ---

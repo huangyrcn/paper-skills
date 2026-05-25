@@ -1,11 +1,9 @@
 ---
 name: paper-card
 description: >
-  Generate structured research cards from a paper that has been resolved and acquired.
-  Use this skill whenever the user wants to create a paper card, reading note, research
-  summary, or structured analysis of an academic paper. This skill produces two cards:
-  a quick card (card.md) and a deep card (card-deep.md) by dispatching two independent
-  subagents to read the paper, then synthesizing their outputs.
+  When: 已经有了论文的 markdown（paper.md），想要结构化的研究卡片。
+  How: 两个 subagent 独立读论文（一个提事实，一个做评价），主 agent 综合后填模板。
+  Output: `$PAPERS_DIR/{folder_slug}/card.md`（quick）+ `card-deep.md`（deep）。
 argument-hint: "<folder_slug>"
 ---
 

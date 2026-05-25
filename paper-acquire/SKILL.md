@@ -1,10 +1,9 @@
 ---
 name: paper-acquire
 description: >
-  Build or update the canonical raw bundle for a resolved paper under `$PAPERS_DIR/{folder_slug}`.
-  Use this skill whenever the user wants to download a paper PDF and normalize it into `paper.md`.
-  For repository discovery, use `paper-repo` skill after this one.
-  Prefer this skill for raw acquisition work; do not use it to write reading notes.
+  When: 已经确定了是哪篇论文（metadata.yaml 已存在），需要获取原文。
+  How: 下载 PDF，用 MinerU 转成 markdown。
+  Output: `$PAPERS_DIR/{folder_slug}/paper/paper.pdf` + `paper.md`。
 argument-hint: "<folder_slug> | <metadata_path>"
 allowed-tools: Bash, Read, Write, Edit
 ---
