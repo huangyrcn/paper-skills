@@ -5,7 +5,6 @@ description: >
   How: 从论文内容提取线索，搜索 GitHub，验证匹配度。
   Output: 仓库信息写入 `$PAPERS_DIR/{folder_slug}/metadata.yaml` 的 `repo_search` 字段；高置信时自动 clone 到 `repo/`。
 argument-hint: "<folder_slug> | <metadata_path>"
-allowed-tools: Bash, Read, Edit, Write
 ---
 
 # Paper Repo

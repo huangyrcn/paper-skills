@@ -5,7 +5,6 @@ description: >
   How: 调用 MinerU API VLM 管线，处理公式、表格、混合排版。
   Output: 与 PDF 同目录的 `.md` 文件和 `_images/` 文件夹。
 argument-hint: "<pdf_path> [-l lang]"
-allowed-tools: Bash
 ---
 
 # PDF to Markdown

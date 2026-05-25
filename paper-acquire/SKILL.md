@@ -5,7 +5,6 @@ description: >
   How: 下载 PDF，用 MinerU 转成 markdown。
   Output: `$PAPERS_DIR/{folder_slug}/paper/paper.pdf` + `paper.md`。
 argument-hint: "<folder_slug> | <metadata_path>"
-allowed-tools: Bash, Read, Write, Edit
 ---
 
 # Paper Acquire
