@@ -34,6 +34,27 @@ uv tool install paper-search-mcp --from "git+https://github.com/openags/paper-se
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
+### 环境变量配置
+
+paper-search-mcp 从环境变量或 `.env` 文件读取 API key。关键配置：
+
+| 变量 | 必须？ | 说明 |
+|------|--------|------|
+| `PAPER_SEARCH_MCP_UNPAYWALL_EMAIL` | **是**（Unpaywall 必须） | 任意有效邮箱，如 `ray030608@gmail.com` |
+| `PAPER_SEARCH_MCP_SEMANTIC_SCHOLAR_API_KEY` | 可选 | 提高 S2 限速（1/s → 100/s） |
+
+如果系统已有 `SEMANTIC_SCHOLAR_API_KEY` 环境变量，会被兼容读取。
+
+设置方式（任选一种）：
+
+```bash
+# 方式 1: 写入 .env 文件（推荐，放在 paper-search-mcp 项目根目录或 ~/.paper-search-mcp.env）
+echo 'PAPER_SEARCH_MCP_UNPAYWALL_EMAIL=ray030608@gmail.com' >> ~/.paper-search-mcp.env
+
+# 方式 2: 导出环境变量
+export PAPER_SEARCH_MCP_UNPAYWALL_EMAIL=ray030608@gmail.com
+```
+
 ## 你可能收到的输入
 
 | 类型 | 示例 |
