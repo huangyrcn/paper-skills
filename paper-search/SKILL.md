@@ -92,6 +92,7 @@ paper-search sources
   "authors": ["Author One", "Author Two"],
   "year": 2020,
   "venue": "ICLR",
+  "method": "transformer",
   "doi": "10.xxx/xxx",
   "arxiv": "2002.05287",
   "pmid": "12345678",
@@ -109,6 +110,11 @@ paper-search sources
 echo '{"title":"...","authors":["A"],"year":2020}' | \
   uv run --script "${SKILL_DIR}/scripts/resolve_metadata.py" --from-json --out "$PAPERS_DIR"
 ```
+
+**关于 `method` 字段：**
+- 你从标题和摘要推断方法名。例如 "Attention Is All You Need" → `"transformer"`，"Geom-GCN: ..." → `"geom-gcn"`
+- 如果标题没有明确的方法名，省略 `method` 字段，脚本会用标题第一个有意义的词兜底
+- 推断不出就不要硬编，让脚本自动处理
 
 脚本自动生成：
 - `folder_slug`：`{venue}{year}-{method}-{first_author}`

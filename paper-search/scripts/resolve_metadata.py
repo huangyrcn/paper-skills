@@ -40,16 +40,24 @@ def slugify(text: str) -> str:
     return text.strip("-")
 
 
+STOP_WORDS = {"a", "an", "the", "on", "in", "of", "for", "to", "with", "and", "or", "is", "are", "at", "from", "by"}
+
 def extract_method(title: str) -> str:
-    """Extract method name from paper title."""
+    """Extract method name from paper title. Fallback: first meaningful word."""
+    # Colon pattern: "BERT: Pre-training..." → "BERT"
     if ":" in title:
         before_colon = title.split(":")[0].strip()
         if before_colon.isupper() or len(before_colon.split()) <= 2:
             return slugify(before_colon)
+    # All-caps acronym: "GAT" or "ResNet"
     words = title.split()
     for w in words:
         if w.isupper() and len(w) >= 2:
             return w.lower()
+    # First meaningful word (skip stop words)
+    for w in words:
+        if w.lower() not in STOP_WORDS and len(w) > 2:
+            return slugify(w)
     return slugify(words[0]) if words else "unknown"
 
 
@@ -59,11 +67,12 @@ def last_name(author: str) -> str:
 
 
 def generate_folder_slug(venue: Optional[str], year: Optional[int],
-                         title: str, authors: list[str]) -> str:
+                         title: str, authors: list[str],
+                         method: Optional[str] = None) -> str:
     """Generate folder slug: {venue}{year}-{method}-{first_author}."""
     v = (venue or "preprint").lower().replace(" ", "")
     y = str(year) if year else "unknown"
-    m = extract_method(title)
+    m = slugify(method) if method else extract_method(title)
     a = last_name(authors[0]) if authors else "unknown"
     return f"{v}{y}-{m}-{a}"
 
@@ -85,6 +94,7 @@ def build_metadata(
     abstract: Optional[str] = None,
     confidence: str = "high",
     evidence: Optional[list[str]] = None,
+    method: Optional[str] = None,
 ) -> dict[str, Any]:
     """Build the canonical metadata dict."""
     # Build canonical URL from available identifiers
@@ -111,7 +121,7 @@ def build_metadata(
 
     metadata = {
         "title": title,
-        "folder_slug": generate_folder_slug(venue, year, title, authors),
+        "folder_slug": generate_folder_slug(venue, year, title, authors, method),
         "identity": {
             "canonical_url": canonical_url,
             "primary_id": _pick_primary_id(doi, arxiv, s2id),
@@ -211,6 +221,8 @@ def main():
     ap.add_argument("--url", default=None, help="Canonical URL")
     ap.add_argument("--pdf-url", default=None)
     ap.add_argument("--abstract", default=None)
+    ap.add_argument("--method", default=None,
+                    help="Method name for folder slug (e.g., transformer, gat)")
     ap.add_argument("--confidence", default="high",
                     choices=["high", "medium", "low"])
     ap.add_argument("--evidence", nargs="*", default=[],
@@ -243,6 +255,7 @@ def main():
         abstract = data.get("abstract")
         confidence = data.get("confidence", "high")
         evidence = data.get("evidence", [])
+        method = data.get("method")
     else:
         title = args.title
         authors = [a.strip() for a in args.authors.split(",") if a.strip()]
@@ -260,6 +273,7 @@ def main():
         abstract = args.abstract
         confidence = args.confidence
         evidence = args.evidence
+        method = args.method
 
     metadata = build_metadata(
         title=title, authors=authors, year=year, venue=venue,
@@ -267,6 +281,7 @@ def main():
         dblp=dblp, pmid=pmid, pmcid=pmcid,
         canonical_url=canonical_url, pdf_url=pdf_url,
         abstract=abstract, confidence=confidence, evidence=evidence,
+        method=method,
     )
 
     slug = metadata["folder_slug"]
