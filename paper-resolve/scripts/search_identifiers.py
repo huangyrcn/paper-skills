@@ -555,22 +555,22 @@ def search_all(query: str, http: CachedHTTP, mailto: str,
             results["pubmed"] = r
             canonical_title = r["title"]
 
-    # Use canonical title for cross-source search
-    # If we got a title from direct resolution, use it; otherwise use query
+    # Search order: arXiv → S2 → DBLP → Crossref → Unpaywall → PubMed → OpenAlex
     search_title = canonical_title if results else query
 
-    # Search remaining sources with the canonical title
+    if "arxiv" not in results:
+        r = query_arxiv(http, search_title)
+        if r:
+            results["arxiv"] = r
+            if not canonical_title or canonical_title == query:
+                canonical_title = r["title"]
+
     if "semantic_scholar" not in results:
         r = query_semantic_scholar(http, search_title, s2_key)
         if r:
             results["semantic_scholar"] = r
             if not canonical_title or canonical_title == query:
                 canonical_title = r["title"]
-
-    if "openalex" not in results:
-        r = query_openalex(http, search_title, mailto)
-        if r:
-            results["openalex"] = r
 
     if "dblp" not in results:
         r = query_dblp(http, search_title)
@@ -582,23 +582,24 @@ def search_all(query: str, http: CachedHTTP, mailto: str,
         if r:
             results["crossref"] = r
 
-    if "arxiv" not in results:
-        r = query_arxiv(http, search_title)
+    # Unpaywall: needs DOI from above sources
+    merged = merge_results(results, canonical_title)
+    if merged.get("doi"):
+        r = query_unpaywall(http, merged["doi"], mailto)
         if r:
-            results["arxiv"] = r
+            results["unpaywall"] = r
 
     if "pubmed" not in results:
         r = query_pubmed(http, search_title, mailto)
         if r:
             results["pubmed"] = r
 
-    # Unpaywall: DOI-based OA lookup, runs after other sources provide DOI
-    merged = merge_results(results, canonical_title)
-    if merged.get("doi"):
-        r = query_unpaywall(http, merged["doi"], mailto)
+    if "openalex" not in results:
+        r = query_openalex(http, search_title, mailto)
         if r:
-            results["unpaywall"] = r
-            merged = merge_results(results, canonical_title)
+            results["openalex"] = r
+
+    merged = merge_results(results, canonical_title)
 
     return {
         "input_type": input_type,
@@ -702,7 +703,7 @@ def merge_results(results: dict[str, dict], canonical_title: str) -> dict:
 def main():
     ap = argparse.ArgumentParser(description="Search academic sources for paper identifiers")
     ap.add_argument("query", help="Title, DOI, arXiv ID/URL, or search query")
-    ap.add_argument("--mailto", default="noreply@example.com",
+    ap.add_argument("--mailto", default="ray030608@gmail.com",
                     help="Email for polite API pools")
     ap.add_argument("--no-cache", action="store_true")
     ap.add_argument("--cache-dir", type=Path, default=None)
