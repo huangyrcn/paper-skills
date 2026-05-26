@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.10"
+# dependencies = ["requests", "pyyaml"]
+# ///
 """Search academic sources for paper identifiers.
 
 Takes a query (title, DOI, arXiv ID, URL, or any string) and searches
 multiple academic APIs. Returns structured JSON with all found identifiers.
 
 Usage:
-  python3 search_identifiers.py "Attention Is All You Need"
-  python3 search_identifiers.py "10.48550/arxiv.1706.03762"
-  python3 search_identifiers.py "2002.05287"
+  uv run --script search_identifiers.py "Attention Is All You Need"
+  uv run --script search_identifiers.py "10.48550/arxiv.1706.03762"
+  uv run --script search_identifiers.py "2002.05287"
   python3 search_identifiers.py --from-json '{"title":"...","doi":"..."}'
 """
 

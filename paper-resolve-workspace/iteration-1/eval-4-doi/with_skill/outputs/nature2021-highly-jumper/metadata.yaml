@@ -1,0 +1,83 @@
+{
+  "title": "Highly accurate protein structure prediction with AlphaFold",
+  "folder_slug": "nature2021-highly-jumper",
+  "identity": {
+    "canonical_url": "https://doi.org/10.1038/s41586-021-03819-2",
+    "primary_id": {
+      "type": "doi",
+      "value": "10.1038/s41586-021-03819-2"
+    },
+    "aliases": {
+      "doi": "10.1038/s41586-021-03819-2",
+      "arxiv": null,
+      "semantic_scholar": null,
+      "openalex": "W3177828909",
+      "dblp": null,
+      "pmid": "34265844",
+      "pmcid": null
+    },
+    "resolution_confidence": "high",
+    "resolution_evidence": []
+  },
+  "bibliography": {
+    "authors": [
+      "John Jumper",
+      "Richard Evans",
+      "Alexander Pritzel",
+      "Tim Green",
+      "Michael Figurnov",
+      "Olaf Ronneberger",
+      "Kathryn Tunyasuvunakool",
+      "Russ Bates",
+      "Augustin Žídek",
+      "Anna Potapenko",
+      "Alex Bridgland",
+      "Clemens Meyer",
+      "Simon A. A. Kohl",
+      "Andrew J. Ballard",
+      "Andrew Cowie",
+      "Bernardino Romera-Paredes",
+      "Stanislav Nikolov",
+      "Rishub Jain",
+      "Jonas Adler",
+      "Trevor Back",
+      "Stig Petersen",
+      "David Reiman",
+      "Ellen Clancy",
+      "Michal Zielinski",
+      "Martin Steinegger",
+      "Michalina Pacholska",
+      "Tamas Berghammer",
+      "Sebastian Bodenstein",
+      "David Silver",
+      "Oriol Vinyals",
+      "Andrew W. Senior",
+      "Koray Kavukcuoglu",
+      "Pushmeet Kohli",
+      "Demis Hassabis"
+    ],
+    "year": 2021,
+    "venue": "Nature",
+    "venue_context": "",
+    "publication_status": "unknown",
+    "abstract": ""
+  },
+  "urls": {
+    "canonical": "https://doi.org/10.1038/s41586-021-03819-2",
+    "pdf": null,
+    "doi": "https://doi.org/10.1038/s41586-021-03819-2",
+    "pmc": null,
+    "openreview": null
+  },
+  "acquisition_hints": {
+    "pdf_sources": [
+      {
+        "source": "publisher",
+        "url": "https://doi.org/10.1038/s41586-021-03819-2",
+        "priority": 3
+      }
+    ],
+    "latex_available": false,
+    "latex_url": null
+  }
+}

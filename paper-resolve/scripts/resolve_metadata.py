@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.10"
+# dependencies = ["pyyaml"]
+# ///
 """Generate metadata.yaml from collected paper identifiers.
 
 This script handles the deterministic parts of paper-resolve:
@@ -7,7 +11,7 @@ This script handles the deterministic parts of paper-resolve:
 - Write the output file
 
 Usage:
-  python resolve_metadata.py --title "..." --year 2020 --venue ICLR --authors "A,B,C" \
+  uv run --script resolve_metadata.py --title "..." --year 2020 --venue ICLR --authors "A,B,C" \
     --doi 10.xxx --arxiv 2002.05287 --s2id abc --openalex W123 --url https://... \
     --confidence high \
     --out $PAPERS_DIR/
@@ -192,8 +196,8 @@ def write_metadata_yaml(path: Path, metadata: dict) -> None:
 
 def main():
     ap = argparse.ArgumentParser(description="Generate metadata.yaml from collected identifiers")
-    ap.add_argument("--title", required=True, help="Canonical paper title")
-    ap.add_argument("--authors", required=True, help="Comma-separated author names")
+    ap.add_argument("--title", help="Canonical paper title")
+    ap.add_argument("--authors", help="Comma-separated author names")
     ap.add_argument("--year", type=int, default=None, help="Publication year")
     ap.add_argument("--venue", default=None, help="Conference/journal name")
     ap.add_argument("--doi", default=None)
@@ -215,6 +219,9 @@ def main():
     ap.add_argument("--from-json", action="store_true",
                     help="Read all fields from JSON stdin instead of CLI args")
     args = ap.parse_args()
+
+    if not args.from_json and (not args.title or not args.authors):
+        ap.error("--title and --authors are required (unless using --from-json)")
 
     if args.from_json:
         data = json.loads(sys.stdin.read())

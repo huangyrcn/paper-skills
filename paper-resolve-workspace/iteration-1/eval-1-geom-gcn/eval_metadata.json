@@ -1,0 +1,13 @@
+{
+  "eval_id": 1,
+  "eval_name": "geom-gcn-fuzzy-title",
+  "prompt": "帮我确认 Geom-GCN 这篇论文具体是哪篇。",
+  "assertions": [
+    "Calls search_identifiers.py with 'Geom-GCN' or similar query",
+    "Output metadata.yaml exists at $PAPERS_DIR/{folder_slug}/metadata.yaml",
+    "metadata.yaml contains canonical title 'Geom-GCN' or 'Geometric Graph Convolutional Networks'",
+    "metadata.yaml contains folder_slug matching {venue}{year}-{method}-{first_author} format",
+    "metadata.yaml contains identity.aliases with arxiv ID",
+    "No PDF is downloaded during this resolution"
+  ]
+}

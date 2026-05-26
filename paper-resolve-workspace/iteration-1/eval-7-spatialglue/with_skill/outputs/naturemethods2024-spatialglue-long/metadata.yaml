@@ -1,0 +1,118 @@
+title: "Deciphering spatial domains from spatial multi-omics with SpatialGlue"
+folder_slug: "naturemethods2024-spatialglue-long"
+
+identity:
+  canonical_url: "https://doi.org/10.1038/s41592-024-02316-4"
+  primary_id:
+    type: "doi"
+    value: "10.1038/s41592-024-02316-4"
+  aliases:
+    doi: "10.1038/s41592-024-02316-4"
+    arxiv: null
+    openreview: null
+    openalex: "W4399892951"
+    semantic_scholar: "d8c0338d870dc84c51e481dfa1632305750b4b3a"
+    dblp: null
+    pmid: "38907114"
+    pmcid: "PMC11399094"
+  resolution_confidence: "high"
+  resolution_evidence:
+    - "Nature Methods article DOI exact match"
+    - "OpenAlex and Semantic Scholar agree on the same identifiers"
+    - "PubMed record confirms title, authors, and venue"
+
+bibliography:
+  authors:
+    - "Yahui Long"
+    - "Kok Siong Ang"
+    - "Raman Sethi"
+    - "Sha Liao"
+    - "Yang Heng"
+    - "Lynn van Olst"
+    - "Shuchen Ye"
+    - "Chengwei Zhong"
+    - "Hang Xu"
+    - "Di Zhang"
+    - "Immanuel Kwok"
+    - "Nazihah Husna"
+    - "Min Jian"
+    - "Lai Guan Ng"
+    - "Ao Chen"
+    - "Nicholas R. J. Gascoigne"
+    - "David Gate"
+    - "Rong Fan"
+    - "Xun Xu"
+    - "Jinmiao Chen"
+  year: 2024
+  venue: "Nature Methods"
+  venue_context: "Nature Methods volume 21, pages 1658-1667 (2024)"
+  publication_status: "published"
+  abstract: "Advances in spatial omics technologies now allow multiple types of data to be acquired from the same tissue slice. To realize the full potential of such data, we need spatially informed methods for data integration. Here, we introduce SpatialGlue, a graph neural network model with a dual-attention mechanism that deciphers spatial domains by intra-omics integration of spatial location and omics measurement followed by cross-omics integration. We demonstrated SpatialGlue on data acquired from different tissue types using different technologies, including spatial epigenome-transcriptome and transcriptome-proteome modalities. Compared to other methods, SpatialGlue captured more anatomical details and more accurately resolved spatial domains such as the cortex layers of the brain. Our method also identified cell types like spleen macrophage subsets located at three different zones that were not available in the original data annotations. SpatialGlue scales well with data size and can be used to integrate three modalities. Our spatial multi-omics analysis tool combines the information from complementary omics modalities to obtain a holistic view of cellular and tissue properties."
+
+urls:
+  canonical: "https://doi.org/10.1038/s41592-024-02316-4"
+  pdf: "https://www.nature.com/articles/s41592-024-02316-4.pdf"
+  doi: "https://doi.org/10.1038/s41592-024-02316-4"
+  pmc: "https://pmc.ncbi.nlm.nih.gov/articles/PMC11399094"
+  openreview: null
+
+# === For paper-acquire ===
+acquisition_hints:
+  pdf_sources:
+    - source: "nature"
+      url: "https://www.nature.com/articles/s41592-024-02316-4.pdf"
+      priority: 1
+      notes: "Open access, CC BY license"
+    - source: "pmc"
+      url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC11399094/pdf/"
+      priority: 2
+      notes: "PMC full text"
+  latex_available: false
+  latex_url: null
+
+# === Legacy compatibility ===
+authors:
+  - "Yahui Long"
+  - "Kok Siong Ang"
+  - "Raman Sethi"
+  - "Sha Liao"
+  - "Yang Heng"
+  - "Lynn van Olst"
+  - "Shuchen Ye"
+  - "Chengwei Zhong"
+  - "Hang Xu"
+  - "Di Zhang"
+  - "Immanuel Kwok"
+  - "Nazihah Husna"
+  - "Min Jian"
+  - "Lai Guan Ng"
+  - "Ao Chen"
+  - "Nicholas R. J. Gascoigne"
+  - "David Gate"
+  - "Rong Fan"
+  - "Xun Xu"
+  - "Jinmiao Chen"
+year: 2024
+venue: "Nature Methods"
+abstract: "Advances in spatial omics technologies now allow multiple types of data to be acquired from the same tissue slice. To realize the full potential of such data, we need spatially informed methods for data integration. Here, we introduce SpatialGlue, a graph neural network model with a dual-attention mechanism that deciphers spatial domains by intra-omics integration of spatial location and omics measurement followed by cross-omics integration. We demonstrated SpatialGlue on data acquired from different tissue types using different technologies, including spatial epigenome-transcriptome and transcriptome-proteome modalities. Compared to other methods, SpatialGlue captured more anatomical details and more accurately resolved spatial domains such as the cortex layers of the brain. Our method also identified cell types like spleen macrophage subsets located at three different zones that were not available in the original data annotations. SpatialGlue scales well with data size and can be used to integrate three modalities. Our spatial multi-omics analysis tool combines the information from complementary omics modalities to obtain a holistic view of cellular and tissue properties."
+
+identifiers:
+  doi: "10.1038/s41592-024-02316-4"
+  arxiv: null
+  semantic_scholar: "d8c0338d870dc84c51e481dfa1632305750b4b3a"
+  openalex: "W4399892951"
+  openreview: null
+  dblp: null
+  pmid: "38907114"
+
+pdf_urls:
+  - "https://www.nature.com/articles/s41592-024-02316-4.pdf"
+
+latex_source:
+  available: false
+  url: null
+
+assets: {}
+repo_search:
+  selected: null
+  candidates: []

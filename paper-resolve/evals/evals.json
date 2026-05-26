@@ -3,41 +3,95 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "帮我确认 Geom-GCN 这篇论文具体是哪篇，最好给出 canonical 标题、URL 和 title_slug。",
-      "expected_output": "Resolve the fuzzy paper reference into a canonical paper identity without requiring DOI.",
+      "prompt": "帮我确认 Geom-GCN 这篇论文具体是哪篇。",
+      "expected_output": "Use search_identifiers.py to resolve the fuzzy title, then generate metadata.yaml via resolve_metadata.py.",
       "files": [],
       "expectations": [
-        "The output includes a canonical title containing 'Geom-GCN' or 'Geometric Graph Convolutional Networks'",
-        "The output includes a title_slug field",
-        "The output includes a canonical_url or identity.canonical_url",
-        "The output includes resolution_confidence",
+        "Calls search_identifiers.py with 'Geom-GCN' or similar query",
+        "Output metadata.yaml exists at $PAPERS_DIR/{folder_slug}/metadata.yaml",
+        "metadata.yaml contains canonical title 'Geom-GCN: Geometric Graph Convolutional Networks'",
+        "metadata.yaml contains folder_slug matching {venue}{year}-{method}-{first_author} format",
+        "metadata.yaml contains identity.aliases with arxiv ID",
         "No PDF is downloaded during this resolution"
       ]
     },
     {
       "id": 2,
-      "prompt": "这个 OpenReview 链接对应的是哪篇论文？请先把论文身份确认下来，不要急着下载。https://openreview.net/forum?id=SkgBfaNKPr",
-      "expected_output": "Resolve an OpenReview-only paper identity and avoid requiring a DOI or final venue.",
+      "prompt": "这个 arXiv 论文 2002.05287 是什么？帮我把身份确定下来。",
+      "expected_output": "Use search_identifiers.py with arXiv ID to resolve directly.",
       "files": [],
       "expectations": [
-        "The output resolves the OpenReview URL to a paper identity",
-        "The output includes an OpenReview identifier in the identity or identifiers",
-        "The output does not require a DOI to succeed",
-        "No PDF is downloaded during this resolution",
-        "The output indicates the paper may be under review or submitted, not necessarily published"
+        "Calls search_identifiers.py with '2002.05287'",
+        "Output metadata.yaml exists",
+        "metadata.yaml contains title 'Geom-GCN' or 'Geometric Graph Convolutional Networks'",
+        "metadata.yaml contains identity.aliases.arxiv = '2002.05287'",
+        "metadata.yaml contains bibliography.authors with at least 'Hongbin Pei'",
+        "No PDF is downloaded"
       ]
     },
     {
       "id": 3,
-      "prompt": "把 Attention Is All You Need 这篇论文定位清楚，如果本地已有 raw 就直接复用。",
-      "expected_output": "Prefer local raw bundle reuse before doing network-based resolution.",
+      "prompt": "Attention Is All You Need 这篇论文的 metadata 整一下。",
+      "expected_output": "Use search_identifiers.py with title, generate metadata.yaml.",
       "files": [],
       "expectations": [
-        "The output checks ~/papers for existing bundles first",
-        "If a local bundle exists, it is reused without network resolution",
-        "The output includes a canonical title",
-        "The output includes resolution_confidence",
-        "If local bundle is reused, the evidence mentions local reuse"
+        "Calls search_identifiers.py with the title",
+        "Output metadata.yaml exists at $PAPERS_DIR/{folder_slug}/metadata.yaml",
+        "metadata.yaml contains canonical title",
+        "metadata.yaml contains identity.aliases with arxiv ID '1706.03762'",
+        "metadata.yaml contains bibliography.year = 2017",
+        "metadata.yaml contains bibliography.venue"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "帮我查一下 10.1038/s41586-021-03819-2 这个 DOI 对应的是什么论文。",
+      "expected_output": "Resolve a DOI directly via Crossref or other source.",
+      "files": [],
+      "expectations": [
+        "Identifies input as DOI",
+        "Output metadata.yaml exists",
+        "metadata.yaml contains a non-empty title",
+        "metadata.yaml contains identity.aliases.doi matching the input",
+        "metadata.yaml contains bibliography.year and bibliography.authors"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "这个 OpenReview 链接对应的是哪篇论文？https://openreview.net/forum?id=SkgBfaNKPr",
+      "expected_output": "Resolve an OpenReview URL by scraping or searching.",
+      "files": [],
+      "expectations": [
+        "Identifies input as OpenReview URL",
+        "Output metadata.yaml exists",
+        "metadata.yaml contains a non-empty title",
+        "metadata.yaml does not require DOI to succeed",
+        "No PDF is downloaded"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "GAT 是哪篇论文提出的？帮我定位一下。",
+      "expected_output": "LLM infers 'Graph Attention Networks' from method name, then searches.",
+      "files": [],
+      "expectations": [
+        "Recognizes 'GAT' as a method name, not a title",
+        "Infers the paper is 'Graph Attention Networks' or similar",
+        "Output metadata.yaml exists",
+        "metadata.yaml contains title related to 'Graph Attention Networks'",
+        "metadata.yaml contains bibliography.authors with 'Petar' or 'Velickovic'"
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "帮我确认 SpatialGlue 这篇论文，它是生物信息学领域的。",
+      "expected_output": "Resolve a bioinformatics paper, may need PubMed in addition to CS sources.",
+      "files": [],
+      "expectations": [
+        "Output metadata.yaml exists",
+        "metadata.yaml contains a non-empty title related to 'SpatialGlue'",
+        "metadata.yaml contains bibliography.year",
+        "metadata.yaml contains bibliography.authors"
       ]
     }
   ]

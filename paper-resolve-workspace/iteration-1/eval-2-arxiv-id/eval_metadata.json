@@ -1,0 +1,13 @@
+{
+  "eval_id": 2,
+  "eval_name": "arxiv-id-direct",
+  "prompt": "这个 arXiv 论文 2002.05287 是什么？帮我把身份确定下来。",
+  "assertions": [
+    "Calls search_identifiers.py with '2002.05287'",
+    "Output metadata.yaml exists",
+    "metadata.yaml contains title 'Geom-GCN' or 'Geometric Graph Convolutional Networks'",
+    "metadata.yaml contains identity.aliases.arxiv = '2002.05287'",
+    "metadata.yaml contains bibliography.authors with at least 'Hongbin Pei'",
+    "No PDF is downloaded"
+  ]
+}

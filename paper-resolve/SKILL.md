@@ -12,6 +12,19 @@ argument-hint: "<论文引用>"
 
 确定用户指的是哪篇论文，收集全部标识符，生成 `metadata.yaml`。
 
+## 前置条件
+
+本 skill 的脚本通过 `uv run --script` 执行（自动安装依赖，无需手动 pip install）。
+
+检查 uv 是否可用：
+
+```bash
+uv --version
+```
+
+如果未安装，提示用户安装：
+
+
 ## 你可能收到的输入
 
 | 类型 | 示例 |
@@ -37,7 +50,7 @@ argument-hint: "<论文引用>"
 查询学术源，返回结构化标识符。
 
 ```bash
-python3 "${SKILL_DIR}/scripts/search_identifiers.py" "任何查询"
+uv run --script "${SKILL_DIR}/scripts/search_identifiers.py" "任何查询"
 ```
 
 自动识别输入类型（DOI、arXiv ID、标题等），查询 Semantic Scholar、OpenAlex、DBLP、Crossref、arXiv、PubMed。
@@ -53,14 +66,14 @@ python3 "${SKILL_DIR}/scripts/search_identifiers.py" "任何查询"
 
 ```bash
 # 通过 CLI 参数
-python3 "${SKILL_DIR}/scripts/resolve_metadata.py" \
+uv run --script "${SKILL_DIR}/scripts/resolve_metadata.py" \
   --title "..." --authors "A,B" --year 2020 --venue ICLR \
   --arxiv "2002.05287" --confidence high \
   --out "$PAPERS_DIR"
 
 # 通过 JSON stdin（推荐，从 search_identifiers.py 的 merged 字段传入）
 echo '{"title":"...","authors":["A"],"year":2020}' | \
-  python3 "${SKILL_DIR}/scripts/resolve_metadata.py" --from-json --out "$PAPERS_DIR"
+  uv run --script "${SKILL_DIR}/scripts/resolve_metadata.py" --from-json --out "$PAPERS_DIR"
 ```
 
 ## 你来决定怎么走

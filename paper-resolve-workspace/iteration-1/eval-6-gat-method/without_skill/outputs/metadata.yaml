@@ -1,0 +1,91 @@
+title: "Graph Attention Networks"
+folder_slug: "iclr2018-gat-velickovic"
+
+identity:
+  canonical_url: "https://arxiv.org/abs/1710.10903"
+  primary_id:
+    type: "arxiv"
+    value: "1710.10903"
+  aliases:
+    doi: "10.17863/CAM.48429"
+    arxiv: "1710.10903"
+    openreview: "rJXMpikCZ"
+    openalex: "W2766453196"
+    semantic_scholar: "33998aff64ce51df8dee45989cdca4b6b1329ec4"
+    dblp: "journals/corr/abs-1710-10903"
+    pmid: null
+    pmcid: null
+  resolution_confidence: "high"
+  resolution_evidence:
+    - "arXiv 1710.10903 title exact match: 'Graph Attention Networks'"
+    - "OpenReview rJXMpikCZ confirms ICLR 2018 acceptance with same authors"
+    - "OpenAlex W2766453196 and Semantic Scholar 33998aff agree on authors and identifiers"
+    - "DBLP key journals/corr/abs-1710-10903 matches arXiv ID"
+    - "Multiple independent sources (Google, arXiv, OpenAlex, Semantic Scholar) converge on same paper"
+
+bibliography:
+  authors:
+    - "Petar Velickovic"
+    - "Guillem Cucurull"
+    - "Arantxa Casanova"
+    - "Adriana Romero"
+    - "Pietro Lio"
+    - "Yoshua Bengio"
+  year: 2018
+  venue: "ICLR"
+  venue_context: "International Conference on Learning Representations 2018"
+  publication_status: "accepted"
+  abstract: "We present graph attention networks (GATs), novel neural network architectures that operate on graph-structured data, leveraging masked self-attentional layers to address the shortcomings of prior methods based on graph convolutions or their approximations. By stacking layers in which nodes are able to attend over their neighborhoods' features, we enable (implicitly) specifying different weights to different nodes in a neighborhood, without requiring any kind of costly matrix operation (such as inversion) or depending on knowing the graph structure upfront. In this way, we address several key challenges of spectral-based graph neural networks simultaneously, and make our model readily applicable to inductive as well as transductive problems. Our GAT models have achieved or matched state-of-the-art results across four established transductive and inductive graph benchmarks: the Cora, Citeseer and Pubmed citation network datasets, as well as a protein-protein interaction dataset (wherein test graphs remain unseen during training)."
+
+urls:
+  canonical: "https://arxiv.org/abs/1710.10903"
+  pdf: "https://arxiv.org/pdf/1710.10903.pdf"
+  doi: "https://doi.org/10.17863/CAM.48429"
+  pmc: null
+  openreview: "https://openreview.net/forum?id=rJXMpikCZ"
+
+# === For paper-acquire ===
+acquisition_hints:
+  pdf_sources:
+    - source: "arxiv"
+      url: "https://arxiv.org/pdf/1710.10903.pdf"
+      priority: 1
+      notes: "Free, no auth required"
+    - source: "openreview"
+      url: "https://openreview.net/forum?id=rJXMpikCZ"
+      priority: 2
+  latex_available: true
+  latex_url: "https://arxiv.org/e-print/1710.10903"
+
+# === Legacy Compatibility ===
+authors:
+  - "Petar Velickovic"
+  - "Guillem Cucurull"
+  - "Arantxa Casanova"
+  - "Adriana Romero"
+  - "Pietro Lio"
+  - "Yoshua Bengio"
+year: 2018
+venue: "ICLR"
+abstract: "We present graph attention networks (GATs), novel neural network architectures that operate on graph-structured data, leveraging masked self-attentional layers to address the shortcomings of prior methods based on graph convolutions or their approximations. By stacking layers in which nodes are able to attend over their neighborhoods' features, we enable (implicitly) specifying different weights to different nodes in a neighborhood, without requiring any kind of costly matrix operation (such as inversion) or depending on knowing the graph structure upfront. In this way, we address several key challenges of spectral-based graph neural networks simultaneously, and make our model readily applicable to inductive as well as transductive problems. Our GAT models have achieved or matched state-of-the-art results across four established transductive and inductive graph benchmarks: the Cora, Citeseer and Pubmed citation network datasets, as well as a protein-protein interaction dataset (wherein test graphs remain unseen during training)."
+
+identifiers:
+  doi: "10.17863/CAM.48429"
+  arxiv: "1710.10903"
+  semantic_scholar: "33998aff64ce51df8dee45989cdca4b6b1329ec4"
+  openalex: "W2766453196"
+  openreview: "rJXMpikCZ"
+  dblp: "journals/corr/abs-1710-10903"
+  pmid: null
+
+pdf_urls:
+  - "https://arxiv.org/pdf/1710.10903.pdf"
+
+latex_source:
+  available: true
+  url: "https://arxiv.org/e-print/1710.10903"
+
+assets: {}
+repo_search:
+  selected: null
+  candidates: []

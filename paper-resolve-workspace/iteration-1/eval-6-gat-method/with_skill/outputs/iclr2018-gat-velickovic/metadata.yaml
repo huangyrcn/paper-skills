@@ -1,0 +1,64 @@
+{
+  "title": "Graph Attention Networks",
+  "folder_slug": "iclr2018-gat-velickovic",
+  "identity": {
+    "canonical_url": "https://arxiv.org/abs/1710.10903",
+    "primary_id": {
+      "type": "arxiv",
+      "value": "1710.10903"
+    },
+    "aliases": {
+      "doi": "10.17863/CAM.48429",
+      "arxiv": "1710.10903",
+      "semantic_scholar": null,
+      "openalex": "W4297733535",
+      "dblp": null,
+      "pmid": null,
+      "pmcid": null
+    },
+    "resolution_confidence": "high",
+    "resolution_evidence": [
+      "arXiv title exact match",
+      "OpenAlex, Semantic Scholar, Crossref agree on the same paper"
+    ]
+  },
+  "bibliography": {
+    "authors": [
+      "Petar Velickovic",
+      "Guillem Cucurull",
+      "Arantxa Casanova",
+      "Adriana Romero",
+      "Pietro Lio",
+      "Yoshua Bengio"
+    ],
+    "year": 2018,
+    "venue": "ICLR",
+    "venue_context": "International Conference on Learning Representations 2018",
+    "publication_status": "accepted",
+    "abstract": "We present graph attention networks (GATs), novel neural network architectures that operate on graph-structured data, leveraging masked self-attentional layers to address the shortcomings of prior methods based on graph convolutions or their approximations. By stacking layers in which nodes are able to attend over their neighborhoods' features, we enable (implicitly) specifying different weights to different nodes in a neighborhood, without requiring any kind of costly matrix operation (such as inversion) or depending on knowing the graph structure upfront. In this way, we address several key challenges of spectral-based graph neural networks simultaneously, and make our model readily applicable to inductive as well as transductive problems. Our GAT models have achieved or matched state-of-the-art results across four established transductive and inductive graph benchmarks: the Cora, Citeseer and Pubmed citation network datasets, as well as a protein-protein interaction dataset (wherein test graphs remain unseen during training)."
+  },
+  "urls": {
+    "canonical": "https://arxiv.org/abs/1710.10903",
+    "pdf": "https://arxiv.org/pdf/1710.10903.pdf",
+    "doi": "https://doi.org/10.17863/CAM.48429",
+    "pmc": null,
+    "openreview": null
+  },
+  "acquisition_hints": {
+    "pdf_sources": [
+      {
+        "source": "arxiv",
+        "url": "https://arxiv.org/pdf/1710.10903.pdf",
+        "priority": 1,
+        "notes": "Free, no auth required"
+      },
+      {
+        "source": "publisher",
+        "url": "https://doi.org/10.17863/CAM.48429",
+        "priority": 3
+      }
+    ],
+    "latex_available": true,
+    "latex_url": "https://arxiv.org/e-print/1710.10903"
+  }
+}
