@@ -5,280 +5,79 @@ description: >
   当用户给出论文标题、DOI、arXiv 链接/ID、OpenReview URL、
   出版商链接、模糊描述、方法名（如 GAT、BERT）时触发。
   即使用户没有明确说"帮我查"，只要上下文涉及一篇尚未解析的论文，就应该先用这个 skill。
+argument-hint: "<论文引用>"
 ---
 
 # Paper Resolve
 
-Resolve a user's paper reference into a canonical paper identity.
+确定用户指的是哪篇论文，收集全部标识符，生成 `metadata.yaml`。
 
-## Core Task: Determine the Canonical Title
+## 你可能收到的输入
 
-**The first and most important step is to determine the canonical paper title.**
+| 类型 | 示例 |
+|------|------|
+| 标题 | "Attention Is All You Need" |
+| DOI | "10.48550/arxiv.2002.05287" |
+| arXiv ID / URL | "2002.05287" 或 `arxiv.org/abs/2002.05287` |
+| OpenReview URL | `openreview.net/forum?id=SkgBfaNKPr` |
+| 出版商 URL | `nature.com/articles/...` |
+| 方法名 | "GAT"、"BERT"、"MManiST" |
+| 本地 PDF | `~/papers/foo.pdf` |
 
-Use web search to find the exact, official title of the paper. This is the foundation for everything else.
+## 你需要产出
 
-## Output Contract
+`$PAPERS_DIR/{folder_slug}/metadata.yaml`
 
-The goal is to determine:
+其中 `folder_slug` 格式为 `{venue}{year}-{method}-{first_author}`（如 `iclr2020-geom-gcn-pei`）。
 
-- `canonical_title` — the official paper title (required, from web search)
-- `folder_slug` — filesystem identifier: `{venue}{year}-{method}-{first_author}`
-- `canonical_url` — primary source URL
-- stable identifiers when available (DOI, arXiv, etc.)
-- `resolution_confidence`
+## 可用工具
 
-Do not require DOI or venue to succeed.
+### search_identifiers.py
 
-## Resolve Workflow
-
-### Step 1: Determine Canonical Title (Three-Search Strategy)
-
-**识别输入类型并添加关键词前缀：**
-
-| 输入类型 | 识别特征 | 关键词前缀 |
-|---------|---------|-----------|
-| DOI | `10.xxx/xxx` | `doi` |
-| PMID | 纯数字（上下文暗示）| `PMID` |
-| arXiv ID | `YYMM.NNNNN` 格式 | `arxiv` |
-| OpenReview URL | `openreview.net` | 直接用URL，无需搜索 |
-| Method name | 短、大写、缩写 | 会话分析提取 |
-| 模糊标题 | 其他字符串 | 会话分析提取 |
-
-**第一次搜索：初步发现**
-
-根据输入类型构建搜索：
+查询学术源，返回结构化标识符。
 
 ```bash
-# DOI
-ask-search "doi {doi}" -e google -n 10
-
-# PMID
-ask-search "PMID {pmid}" -e google -n 10
-·
-# arXiv ID
-ask-search "arxiv {arxiv_id}" -e google -n 10
-
-# Method name / 模糊标题
-ask-search "{用户输入}" -e google -n 10
-
-# OpenReview URL — 直接读页面，跳过搜索
-crwlr crawl -o md "{openreview_url}"
+python3 "${SKILL_DIR}/scripts/search_identifiers.py" "任何查询"
 ```
 
-**第二次搜索：深度验证**
+自动识别输入类型（DOI、arXiv ID、标题等），查询 Semantic Scholar、OpenAlex、DBLP、Crossref、arXiv、PubMed。
 
-分析会话上下文，提取补充关键词：
+输出 JSON 到 stdout，包含：
+- `canonical_title` — 确定的论文标题
+- `merged` — 合并后的标识符（doi, arxiv, authors, year, venue, ...）
+- `sources` — 各源的原始结果
 
-1. 用户讨论的是什么领域？
-2. 用户提到了哪些技术术语？
-3. 用户是否提到了期刊/会议？
-4. 用户是否提到了作者或机构？
+### resolve_metadata.py
 
-构建搜索：
-
-```bash
-ask-search "{关键词前缀} {用户输入} {会话关键词}" -e google -n 10
-```
-
-示例：
-- DOI + 会话讨论 bioinformatics → `ask-search "doi 10.xxx bioinformatics" -e google -n 10`
-- arXiv ID + 会话讨论 GNN → `ask-search "arxiv 2002.05287 graph neural network" -e google -n 10`
-
-**第三次搜索：标题复核**
+从标识符生成 `metadata.yaml`。
 
 ```bash
-ask-search "\"{候选标题关键部分}\"" -e google -n 10
-```
-
-**置信度判断**：
-- 三次搜索结果一致，多个来源指向同一论文 → high confidence
-- 前两次一致，第三次有偏差 → medium confidence
-- 结果不一致或有多个候选 → low confidence，需要用户确认
-
-### Step 2: Collect Identifiers (Best Effort)
-
-使用 ask-search 直接指定学术引擎搜索。**以下全部必查**：
-
-| 源 | 引擎名称 | 获取的信息 |
-|---|---------|-----------|
-| **OpenAlex** | `openalex` | DOI, OpenAlex ID, PMID, PMCID, S2 ID, is_oa, pdf_url, venue, authors, year |
-| **Semantic Scholar** | `"semantic scholar"` | S2 ID, openAccessPdf, authors, venue |
-| **Crossref** | `crossref` | DOI 官方元数据, publisher, type, container-title |
-| **DBLP** | `dblp` | DBLP key, venue（规范）, type, authors |
-| **PubMed** | `pubmed` | PMID, PMCID, DOI, authors, venue（生物医学）|
-| **arXiv** | `arxiv` | arXiv ID, title, authors, categories, DOI link（预印本）|
-| **Google Scholar** | `"google scholar"` | 被引用次数（不存 metadata）|
-| **OpenReview** | `google` + `site:openreview.net` | OpenReview ID, reviews, decision, DOI link（会议投稿）|
-
-**注意**：引擎名称含空格时需用引号包裹，如 `-e "semantic scholar"`。
-
-**查询流程（每个源）**：
-
-```bash
-# 大部分源直接指定引擎
-ask-search "{title}" -e {engine} -n 5
-
-# OpenReview 无专用引擎，用 google + site:
-ask-search "site:openreview.net {title}" -e google -n 5
-```
-
-**示例**：
-
-```bash
-# OpenAlex — 信息最全
-ask-search "Neural Message Passing for Quantum Chemistry" -e openalex -n 5
-
-# Semantic Scholar — 有 openAccessPdf
-ask-search "Neural Message Passing for Quantum Chemistry" -e "semantic scholar" -n 5
-
-# PubMed — 生物医学论文必查
-ask-search "Deciphering spatial domains from spatial multi-omics with SpatialGlue" -e pubmed -n 5
-
-# arXiv — 预印本/ML 论文
-ask-search "Neural Message Passing for Quantum Chemistry" -e arxiv -n 5
-
-# DBLP — 计算机/ML 论文 venue 规范化
-ask-search "Neural Message Passing for Quantum Chemistry" -e dblp -n 5
-
-# Crossref — DOI 官方元数据
-ask-search "Deciphering spatial domains from spatial multi-omics with SpatialGlue" -e crossref -n 5
-
-# Google Scholar — 引用信息（不存 metadata）
-ask-search "Neural Message Passing for Quantum Chemistry" -e "google scholar" -n 5
-
-# OpenReview — 会议论文
-ask-search "site:openreview.net ICLR 2020 GNN" -e google -n 5
-```
-
-**数据映射**：
-
-Read [references/source-metadata-mapping.md](references/source-metadata-mapping.md) for the complete mapping from sources to metadata fields.
-
-**查询顺序建议**：
-
-1. **OpenAlex** — 信息最全，包含 S2 ID、PMID、PMCID
-2. **Semantic Scholar** — openAccessPdf 重要
-3. **PubMed** — 生物医学论文必查
-4. **arXiv** — 预印本/ML 论文，有 LaTeX source
-5. **DBLP** — CS 论文 venue 规范化
-6. **Crossref** — DOI 验证
-7. **OpenReview** — 会议投稿
-
-**交叉验证**：
-
-- 比较各源的 title 是否一致
-- 比较各源的 DOI 是否一致
-- 不一致时记录 evidence 并降低 resolution_confidence
-
-**无结果处理**：
-
-- 某些源可能没有该论文（如 Nature Methods 论文不在 arXiv/OpenReview）
-- 记录为 `null`，不影响整体置信度
-- 多个源一致即可确认
-
-### Step 3: Generate metadata.yaml (script)
-
-Use the bundled script to generate `folder_slug` and `metadata.yaml` from collected identifiers:
-
-```bash
+# 通过 CLI 参数
 python3 "${SKILL_DIR}/scripts/resolve_metadata.py" \
-  --title "canonical title" \
-  --authors "Author One,Author Two" \
-  --year 2020 \
-  --venue "ICLR" \
-  --doi "10.xxx" \
-  --arxiv "2002.05287" \
-  --s2id "abc123" \
-  --openalex "W123" \
-  --confidence high \
-  --evidence "arXiv title exact match" "OpenAlex agrees" \
+  --title "..." --authors "A,B" --year 2020 --venue ICLR \
+  --arxiv "2002.05287" --confidence high \
   --out "$PAPERS_DIR"
+
+# 通过 JSON stdin（推荐，从 search_identifiers.py 的 merged 字段传入）
+echo '{"title":"...","authors":["A"],"year":2020}' | \
+  python3 "${SKILL_DIR}/scripts/resolve_metadata.py" --from-json --out "$PAPERS_DIR"
 ```
 
-Or via JSON (useful when identifiers come from multiple search steps):
+## 你来决定怎么走
 
-```bash
-echo '{
-  "title": "...", "authors": ["A", "B"], "year": 2020,
-  "venue": "ICLR", "doi": "10.xxx", "arxiv": "2002.05287",
-  "confidence": "high", "evidence": ["..."]
-}' | python3 "${SKILL_DIR}/scripts/resolve_metadata.py" --from-json --out "$PAPERS_DIR"
-```
+根据输入类型，你自己判断处理路径：
 
-The script handles:
-- `folder_slug` generation: `{venue}{year}-{method}-{first_author}`
-- Identifier merging and primary ID selection
-- PDF source priority list for `paper-acquire`
-- Collision detection (refuses to overwrite existing metadata)
+- **有直接标识符**（DOI、arXiv ID、PMID）→ 传给 `search_identifiers.py`，它会直接解析
+- **标题** → 直接传给 `search_identifiers.py`，它会跨源搜索
+- **URL** → 先判断是学术 URL 还是普通网页。学术 URL 直接传；普通网页可能需要先提取标题
+- **方法名** → 需要你推断出论文标题，再传给脚本。可能需要问用户要上下文
+- **本地 PDF** → 先检查 `$PAPERS_DIR` 是否已有。没有的话，提取标题再搜索
+- **搜索结果不理想** → 尝试换关键词、加上下文、或问用户确认
 
-Read [references/folder-slug.md](references/folder-slug.md) for slug format details.
-Read [references/metadata-schema.md](references/metadata-schema.md) for output schema.
+## references
 
-## Input Normalization
-
-Understand what the user gave:
-
-| Input type | Approach |
-|------------|----------|
-| Title (fuzzy) | Search → determine canonical title |
-| DOI | Direct resolution → confirm title from source |
-| arXiv id/URL | Direct resolution → confirm title from arXiv |
-| OpenReview URL | Direct resolution → confirm title |
-| Publisher URL | Read page → extract title |
-| Local PDF path | Check existing $PAPERS_DIR first |
-| Method name | Search method + context keywords → find proposing paper |
-
-### Method Name Detection
-
-If the input looks like a method name (short, capitalized, acronym-like, e.g., "GAT", "BERT", "MManiST"):
-
-1. **Ask for context keywords** (optional but recommended):
-   - "This looks like a method name. Any context to help narrow down?"
-   - Examples: "graph neural network", "NLP", "spatial transcriptomics", "computer vision"
-   - If user provides keywords, search `"{method_name} {keywords}"`
-
-2. **Auto-infer from conversation context** (if user doesn't provide):
-   - Recent topics in conversation
-   - Project domain (if detectable)
-   - Previous papers discussed
-
-3. **Build search queries** (in priority order):
-   - Primary: `"{method_name} {context_keywords}"`
-   - Fallback: `"{method_name} method paper"`
-   - Direct: `"{method_name}"`
-
-4. **Match results**:
-   - Title contains the method name
-   - Paper introduces/proposes this method
-   - Check abstract for "we propose/introduce/present {method_name}"
-
-5. **Set confidence**:
-   - High: exact match in title + clear proposal statement
-   - Medium: method name in title, need to verify
-   - Low: multiple candidates, ask user to confirm
-
-#### Examples
-
-| Method Name | Context | Search Query | Result |
-|-------------|---------|--------------|--------|
-| "GAT" | graph neural network | "GAT graph neural network" | "Graph Attention Networks" |
-| "BERT" | NLP | "BERT NLP" | "Pre-training of Deep Bidirectional Transformers..." |
-| "MManiST" | spatial transcriptomics | "MManiST spatial transcriptomics" | "Multi-Manifolds fusing hyperbolic graph network..." |
-| "ResNet" | (none provided) | "ResNet method paper" | "Deep Residual Learning for Image Recognition" |
-
-## OpenReview and Preprint Handling
-
-Treat OpenReview and preprint-only papers as first-class cases:
-
-- `venue` may be empty
-- `publication_status` may be `submission`, `under_review`, `accepted`, `workshop`, `withdrawn`, or `unknown`
-
-Do not fail resolution only because DOI or venue is missing.
-
-## Resolution Confidence
-
-Set `resolution_confidence` based on evidence quality:
-
-- `high`: exact identifier match, multiple sources agree
-- `medium`: title matches well, identifiers partial
-- `low`: ambiguous matches, ask user to confirm
+| 文件 | 内容 |
+|------|------|
+| [folder-slug.md](references/folder-slug.md) | folder_slug 格式规范 |
+| [metadata-schema.md](references/metadata-schema.md) | metadata.yaml 输出 schema |
+| [source-metadata-mapping.md](references/source-metadata-mapping.md) | 各学术源字段映射 |
