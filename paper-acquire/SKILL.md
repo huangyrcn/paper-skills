@@ -3,7 +3,7 @@ name: paper-acquire
 description: >
   获取论文原文：下载 PDF 并转成结构化 markdown。
   当用户要求下载论文、获取 PDF、把论文转成 markdown 时触发。
-  也作为 paper-resolve 的下游自动步骤——确定了论文身份后自动获取原文。
+  也作为 paper-search 的下游自动步骤——确定了论文身份后自动获取原文。
 argument-hint: "<folder_slug> | <metadata_path>"
 ---
 
@@ -29,9 +29,9 @@ This skill does **not**:
 
 ### 1. Start from a resolved metadata bundle
 
-**必须先有 `metadata.yaml`**（由 `paper-resolve` 产出）。
+**必须先有 `metadata.yaml`**（由 `paper-search` 产出）。
 
-如果用户只给了一个模糊引用，先用 `paper-resolve`。
+如果用户只给了一个模糊引用，先用 `paper-search`。
 
 读取 metadata.yaml，提取对 acquire 有用的信息：
 

@@ -22,7 +22,7 @@ This skill owns:
 This skill does **not**:
 
 - Download PDF or normalize paper (use `paper-acquire`)
-- Resolve paper identity (use `paper-resolve`)
+- Resolve paper identity (use `paper-search`)
 - Discover code repositories (use `paper-repo`)
 - Modify `metadata.yaml`
 
@@ -30,7 +30,7 @@ This skill does **not**:
 
 Before running paper-card, the paper must have:
 
-- `$PAPERS_DIR/{folder_slug}/metadata.yaml` (from `paper-resolve`)
+- `$PAPERS_DIR/{folder_slug}/metadata.yaml` (from `paper-search`)
 - `$PAPERS_DIR/{folder_slug}/paper/paper.md` (from `paper-acquire`)
 
 If these are missing, run the upstream skills first.
@@ -96,6 +96,6 @@ Read these before dispatching subagents.
 
 ## Integration
 
-This skill runs after `paper-acquire` (which runs after `paper-resolve`).
+This skill runs after `paper-acquire` (which runs after `paper-search`).
 
 Use `paper-pipeline` for end-to-end workflow including card generation.

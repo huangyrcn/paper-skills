@@ -18,12 +18,12 @@ expanding agent or script is responsible for resolving `~` or `$HOME`.
 
 `{venue}{year}-{method}-{first_author}`
 
-See `paper-resolve/references/folder-slug.md` for details.
+See `paper-search/references/folder-slug.md` for details.
 
 ## Skill Pipeline Order
 
 ```
-paper-resolve → paper-acquire → paper-card
+paper-search → paper-acquire → paper-card
                               → paper-repo
 ```
 

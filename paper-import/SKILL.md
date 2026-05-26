@@ -17,7 +17,7 @@ argument-hint: "<论文引用> [--no-acquire] [--with-repo]"
 用户输入（标题/DOI/链接/模糊描述）
        │
        ▼
-  ① paper-resolve（始终执行）
+  ① paper-search（始终执行）
        │
        ▼ 确定论文身份，生成 metadata.yaml
        │
@@ -59,9 +59,9 @@ paper-import "10.48550/arxiv.2002.05287" --with-repo
 
 ## 各步骤职责
 
-### Step 1: paper-resolve（始终执行）
+### Step 1: paper-search（始终执行）
 
-调用 `paper-resolve` skill。
+调用 `paper-search` skill。
 
 - 输入：用户的论文引用
 - 输出：`$PAPERS_DIR/{folder_slug}/metadata.yaml`
