@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -214,8 +215,9 @@ def main():
                     choices=["high", "medium", "low"])
     ap.add_argument("--evidence", nargs="*", default=[],
                     help="Resolution evidence strings")
-    ap.add_argument("--out", type=Path, required=True,
-                    help="Output directory ($PAPERS_DIR)")
+    default_out = Path(os.environ.get("PAPERS_DIR", "~/docs/papers")).expanduser()
+    ap.add_argument("--out", type=Path, default=default_out,
+                    help="Output directory (default: $PAPERS_DIR or ~/docs/papers)")
     ap.add_argument("--from-json", action="store_true",
                     help="Read all fields from JSON stdin instead of CLI args")
     args = ap.parse_args()

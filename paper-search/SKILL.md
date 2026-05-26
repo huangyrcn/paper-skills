@@ -32,12 +32,13 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 
 ### 2. 环境变量
 
-已在 `.bashrc` 中配置：
+| 变量 | 说明 | 默认值 |
+|------|------|--------|
+| `PAPERS_DIR` | 论文存储根目录 | `~/docs/papers` |
+| `PAPER_SEARCH_MCP_UNPAYWALL_EMAIL` | Unpaywall 必须 | — |
+| `PAPER_SEARCH_MCP_SEMANTIC_SCHOLAR_API_KEY` | 提高 S2 限速 | — |
 
-| 变量 | 说明 |
-|------|------|
-| `PAPER_SEARCH_MCP_UNPAYWALL_EMAIL` | Unpaywall 必须 |
-| `PAPER_SEARCH_MCP_SEMANTIC_SCHOLAR_API_KEY` | 提高 S2 限速 |
+`PAPERS_DIR` 未设置时默认 `~/docs/papers`。metadata.yaml 写入 `$PAPERS_DIR/{folder_slug}/metadata.yaml`。
 
 ## CLI 命令
 
