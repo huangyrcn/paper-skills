@@ -1,9 +1,9 @@
 ---
 name: pdf-to-md
 description: >
-  When: 有一个 PDF 文件需要转成 markdown。
-  How: 调用 MinerU API VLM 管线，处理公式、表格、混合排版。
-  Output: 与 PDF 同目录的 `.md` 文件和 `_images/` 文件夹。
+  PDF 转高质量 markdown，支持公式、表格、混合排版。
+  当用户要求 PDF 转 markdown、提取论文文本、OCR 提取时触发。
+  注意：paper-acquire 内部会调用它，不需要单独触发。
 argument-hint: "<pdf_path> [-l lang]"
 ---
 

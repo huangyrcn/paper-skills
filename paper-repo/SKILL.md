@@ -1,9 +1,10 @@
 ---
 name: paper-repo
 description: >
-  When: 已经确定了是哪篇论文，需要找它的代码仓库。
-  How: 从论文内容提取线索，搜索 GitHub，验证匹配度。
-  Output: 仓库信息写入 `$PAPERS_DIR/{folder_slug}/metadata.yaml` 的 `repo_search` 字段；高置信时自动 clone 到 `repo/`。
+  找论文的代码仓库。
+  当用户问"代码在哪"、"有没有实现"、"帮我找 repo"、
+  "官方代码"、"复现"时触发。
+  验证仓库真实性后自动 clone。
 argument-hint: "<folder_slug> | <metadata_path>"
 ---
 

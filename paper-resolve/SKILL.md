@@ -1,9 +1,10 @@
 ---
 name: paper-resolve
 description: >
-  When: 用户提到一篇论文——标题、DOI、arXiv 链接、OpenReview URL、模糊描述都行。
-  How: 通过搜索确定具体是哪篇论文，收集标识符。
-  Output: `$PAPERS_DIR/{folder_slug}/metadata.yaml`。
+  确定用户提到的论文具体是哪篇，解析出所有标识符。
+  当用户给出论文标题、DOI、arXiv 链接/ID、OpenReview URL、
+  出版商链接、模糊描述、方法名（如 GAT、BERT）时触发。
+  即使用户没有明确说"帮我查"，只要上下文涉及一篇尚未解析的论文，就应该先用这个 skill。
 ---
 
 # Paper Resolve

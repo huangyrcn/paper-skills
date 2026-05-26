@@ -1,9 +1,10 @@
 ---
 name: paper-card
 description: >
-  When: 已经有了论文的 markdown（paper.md），想要结构化的研究卡片。
-  How: 两个 subagent 独立读论文（一个提事实，一个做评价），主 agent 综合后填模板。
-  Output: `$PAPERS_DIR/{folder_slug}/card.md`（quick）+ `card-deep.md`（deep）。
+  把一篇论文拆解成结构化研究卡片。
+  当用户说"做个卡片"、"写阅读笔记"、"总结这篇论文"、
+  "帮我读一下"、"结构化分析"、"拆解论文"时触发。
+  输出 card.md（快速概览）和 card-deep.md（深度分析）。
 argument-hint: "<folder_slug>"
 ---
 

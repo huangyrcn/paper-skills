@@ -1,9 +1,9 @@
 ---
 name: paper-acquire
 description: >
-  When: 已经确定了是哪篇论文（metadata.yaml 已存在），需要获取原文。
-  How: 下载 PDF，用 MinerU 转成 markdown。
-  Output: `$PAPERS_DIR/{folder_slug}/paper/paper.pdf` + `paper.md`。
+  获取论文原文：下载 PDF 并转成结构化 markdown。
+  当用户要求下载论文、获取 PDF、把论文转成 markdown 时触发。
+  也作为 paper-resolve 的下游自动步骤——确定了论文身份后自动获取原文。
 argument-hint: "<folder_slug> | <metadata_path>"
 ---
 
