@@ -54,7 +54,7 @@ ask-search "doi {doi}" -e google -n 10
 
 # PMID
 ask-search "PMID {pmid}" -e google -n 10
-
+·
 # arXiv ID
 ask-search "arxiv {arxiv_id}" -e google -n 10
 
@@ -176,28 +176,43 @@ Read [references/source-metadata-mapping.md](references/source-metadata-mapping.
 - 记录为 `null`，不影响整体置信度
 - 多个源一致即可确认
 
-### Step 3: Generate folder_slug and Write metadata.yaml
+### Step 3: Generate metadata.yaml (script)
 
-From the collected identifiers (venue, year, authors) and the canonical title, generate the folder slug:
+Use the bundled script to generate `folder_slug` and `metadata.yaml` from collected identifiers:
 
-Format: `{venue}{year}-{method}-{first_author}`
-
-- `venue`: lowercase `bibliography.venue` (e.g., "ICLR" → `iclr`); fallback `"preprint"`
-- `year`: `bibliography.year`; fallback `"unknown"`
-- `method`: acronym or key term from title (e.g., "Geom-GCN: ..." → `geom-gcn`, "Attention Is All You Need" → `transformer`)
-- `first_author`: last name of first author, lowercase (e.g., "Thomas Kipf" → `kipf`)
-
-If collision occurs, add suffix (arXiv id, DOI hash, etc.)
-
-Read [references/folder-slug.md](references/folder-slug.md) for details.
-
-Write the resolved identity to:
-
-```text
-$PAPERS_DIR/{folder_slug}/metadata.yaml
+```bash
+python3 "${SKILL_DIR}/scripts/resolve_metadata.py" \
+  --title "canonical title" \
+  --authors "Author One,Author Two" \
+  --year 2020 \
+  --venue "ICLR" \
+  --doi "10.xxx" \
+  --arxiv "2002.05287" \
+  --s2id "abc123" \
+  --openalex "W123" \
+  --confidence high \
+  --evidence "arXiv title exact match" "OpenAlex agrees" \
+  --out "$PAPERS_DIR"
 ```
 
-Read [references/metadata-schema.md](references/metadata-schema.md) for the output format.
+Or via JSON (useful when identifiers come from multiple search steps):
+
+```bash
+echo '{
+  "title": "...", "authors": ["A", "B"], "year": 2020,
+  "venue": "ICLR", "doi": "10.xxx", "arxiv": "2002.05287",
+  "confidence": "high", "evidence": ["..."]
+}' | python3 "${SKILL_DIR}/scripts/resolve_metadata.py" --from-json --out "$PAPERS_DIR"
+```
+
+The script handles:
+- `folder_slug` generation: `{venue}{year}-{method}-{first_author}`
+- Identifier merging and primary ID selection
+- PDF source priority list for `paper-acquire`
+- Collision detection (refuses to overwrite existing metadata)
+
+Read [references/folder-slug.md](references/folder-slug.md) for slug format details.
+Read [references/metadata-schema.md](references/metadata-schema.md) for output schema.
 
 ## Input Normalization
 
