@@ -82,8 +82,8 @@ Both files should be self-contained Markdown with YAML frontmatter.
 
 ## Templates
 
-- [Quick card template](../templates/paper-card-quick.md)
-- [Deep card template](../templates/paper-card-deep.md)
+- [Quick card template](templates/paper-card-quick.md)
+- [Deep card template](templates/paper-card-deep.md)
 
 Read the templates before filling them. Preserve all section headers and structure exactly.
 
