@@ -1,0 +1,54 @@
+{
+  "skill_name": "paper-search",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "帮我搜一下 Geom-GCN 这篇论文，出自 ICLR 2020，作者是 Hongbin Pei",
+      "expected_output": "Search for the paper, resolve its identity, and generate metadata.yaml under $PAPERS_DIR with correct folder_slug.",
+      "files": [],
+      "expectations": [
+        "The skill calls paper-search search with a relevant query containing 'Geom-GCN'",
+        "A metadata.yaml file is generated under $PAPERS_DIR/{folder_slug}",
+        "The folder_slug follows the {venue}{year}-{method}-{first_author} format, e.g. iclr2020-geom-gcn-pei",
+        "The metadata.yaml contains identity section with arxiv ID 2002.05287",
+        "The metadata.yaml contains bibliography section with authors, year, venue"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "帮我查一下 DOI 10.48550/arxiv.1706.03762 对应的论文",
+      "expected_output": "Resolve the DOI to a paper identity and generate metadata.yaml.",
+      "files": [],
+      "expectations": [
+        "The skill searches using the DOI via crossref or semantic scholar sources",
+        "A metadata.yaml is generated with the DOI in identity.aliases",
+        "The identity section identifies this as the 'Attention Is All You Need' paper (arXiv 1706.03762)",
+        "The urls section includes a canonical URL for the paper"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "找一下 arXiv 上的 2002.05287",
+      "expected_output": "Resolve the arXiv ID directly and generate metadata.yaml.",
+      "files": [],
+      "expectations": [
+        "The skill searches arxiv source with the ID 2002.05287",
+        "A metadata.yaml is generated with arxiv in identity.aliases",
+        "The urls.pdf field points to arxiv.org/pdf/2002.05287.pdf",
+        "The acquisition_hints section indicates LaTeX is available from arxiv"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "搜索最近关于 large language model reasoning 的论文，2024 年以后的",
+      "expected_output": "Search multiple sources with year filter and return top results.",
+      "files": [],
+      "expectations": [
+        "The skill calls paper-search search with year filter -y 2024 or 2024-2026",
+        "Multiple sources are used (e.g. arxiv, semantic, openalex)",
+        "Results are returned with titles, authors, and years",
+        "The skill presents results to the user rather than auto-generating metadata for all of them"
+      ]
+    }
+  ]
+}

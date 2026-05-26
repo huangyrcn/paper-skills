@@ -1,0 +1,43 @@
+{
+  "skill_name": "paper-repo",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "帮我找一下这篇论文的官方代码仓库，论文在 ~/docs/papers/iclr2020-geom-gcn-pei/",
+      "expected_output": "Discover the official Geom-GCN repository, verify it, and clone it to repo/.",
+      "files": [],
+      "expectations": [
+        "The skill extracts code links from paper.md and PDF metadata",
+        "The skill searches GitHub if no explicit link is found in the paper",
+        "Candidates are verified against DOI citation, author match, and method name criteria",
+        "The selected repository is cloned to repo/ when confidence is high or medium",
+        "repo_search section is written to metadata.yaml with selected and candidates"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "这篇论文可能没有公开代码，但帮我找找有没有类似的实现",
+      "expected_output": "Search for reimplementation repositories and record findings even if no official repo exists.",
+      "files": [],
+      "expectations": [
+        "The skill searches GitHub for the method name and paper title",
+        "Candidates are evaluated with lower confidence levels (low/medium)",
+        "repo_search section is written to metadata.yaml even when no high-confidence repo is found",
+        "The selected field is null or has low confidence, but candidates list is populated",
+        "The skill does not fail or error when no official repo is found"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "帮我看看 ~/docs/papers/attention2017-transformer-vaswani/ 的代码在哪，不要 clone",
+      "expected_output": "Find the official repository URL without cloning it.",
+      "files": [],
+      "expectations": [
+        "The skill finds the TensorFlow official implementation or similar",
+        "The repo URL is recorded in metadata.yaml repo_search.selected",
+        "No git clone is performed (--no-clone or similar behavior)",
+        "The cloned_to field is absent or null in the output"
+      ]
+    }
+  ]
+}

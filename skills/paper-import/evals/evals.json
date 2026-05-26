@@ -1,0 +1,45 @@
+{
+  "skill_name": "paper-import",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "帮我导入 Attention Is All You Need 这篇论文",
+      "expected_output": "Run the full pipeline: resolve → acquire. Generate metadata.yaml, download PDF, and convert to paper.md.",
+      "files": [],
+      "expectations": [
+        "paper-search is called first to resolve the paper identity",
+        "metadata.yaml is generated with correct identity and bibliography",
+        "paper-acquire is called to download the PDF",
+        "paper.md is generated via pdf-to-md normalization",
+        "The final folder contains metadata.yaml, paper/paper.pdf, and paper/paper.md",
+        "paper-repo is NOT called (default off)"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "帮我确认一下 GAT 这篇论文的身份，不需要下载",
+      "expected_output": "Run only the resolve step with --no-acquire behavior.",
+      "files": [],
+      "expectations": [
+        "paper-search is called to resolve the paper identity",
+        "metadata.yaml is generated with identity and bibliography",
+        "No PDF is downloaded",
+        "No paper.md is generated",
+        "The user is informed of the resolved paper identity"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "帮我把 Geom-GCN 这篇论文全套导入，包括找代码仓库",
+      "expected_output": "Run the full pipeline including repo discovery: resolve → acquire → repo.",
+      "files": [],
+      "expectations": [
+        "paper-search resolves the paper identity",
+        "paper-acquire downloads PDF and generates paper.md",
+        "paper-repo searches for and clones the implementation repository",
+        "The final folder contains metadata.yaml, paper/, and repo/",
+        "The repo_search section in metadata.yaml records the discovery results"
+      ]
+    }
+  ]
+}

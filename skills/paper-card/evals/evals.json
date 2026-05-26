@@ -1,0 +1,44 @@
+{
+  "skill_name": "paper-card",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "帮我给这篇论文做个卡片，文件在 ~/docs/papers/iclr2020-geom-gcn-pei/",
+      "expected_output": "Generate both card.md (quick) and card-deep.md (deep) from the acquired paper.",
+      "files": [],
+      "expectations": [
+        "The skill reads metadata.yaml and paper/paper.md from the folder",
+        "Two subagents are dispatched in parallel: structure extractor and evaluation extractor",
+        "card.md is generated using the quick card template",
+        "card-deep.md is generated using the deep card template",
+        "Both files contain YAML frontmatter with title, authors, year, venue",
+        "The cards include extracted sections like problem, method, results, limitations"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "帮我深度分析一下 Attention Is All You Need 这篇论文，做个结构化拆解",
+      "expected_output": "Generate card-deep.md with detailed claim verification and evidence analysis.",
+      "files": [],
+      "expectations": [
+        "The skill resolves the paper reference to a folder_slug first if needed",
+        "card-deep.md includes novelty assessment with star ratings",
+        "card-deep.md includes claim verification with evidence quality analysis",
+        "card-deep.md includes soundness and reproducibility assessment",
+        "The output references specific sections and page numbers from the paper"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "帮我总结一下 ~/docs/papers/xxx/ 这篇论文",
+      "expected_output": "Generate card.md as a quick summary card.",
+      "files": [],
+      "expectations": [
+        "The skill checks for metadata.yaml and paper/paper.md prerequisites",
+        "If prerequisites are missing, the skill tells the user to run paper-acquire first",
+        "If prerequisites exist, card.md is generated with problem, method, key results",
+        "The card includes a one-paragraph executive summary at the top"
+      ]
+    }
+  ]
+}

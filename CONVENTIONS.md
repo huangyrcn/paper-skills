@@ -1,4 +1,4 @@
-# Paper Card — Shared Conventions
+# Paper Skills — Shared Conventions
 
 ## Papers Directory
 
@@ -23,8 +23,18 @@ See `paper-search/references/folder-slug.md` for details.
 ## Skill Pipeline Order
 
 ```
-paper-search → paper-acquire → paper-card
-                              → paper-repo
+paper-import (orchestrator)
+  └→ paper-search → paper-acquire → paper-card
+                                  → paper-repo
+
+pdf-to-md is a utility used by paper-acquire
 ```
 
-- `pdf-to-md` is a utility used by `paper-acquire`
+| Skill | Role | Owns |
+|---|---|---|
+| paper-import | Pipeline orchestrator | Control flow, output folder structure |
+| paper-search | Identity resolution | metadata.yaml (identity, bibliography, urls, acquisition_hints) |
+| paper-acquire | PDF download + normalization | paper.pdf, paper.md, paper_images/ |
+| paper-card | Reading notes | card.md, card-deep.md |
+| paper-repo | Repository discovery | repo_search in metadata.yaml, repo/ |
+| pdf-to-md | PDF→Markdown utility | (utility, no persistent artifacts) |
