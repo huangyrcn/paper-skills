@@ -487,6 +487,31 @@ def query_pubmed(http: CachedHTTP, title: str, mailto: str) -> dict | None:
     }
 
 
+def query_unpaywall(http: CachedHTTP, doi: str, mailto: str) -> dict | None:
+    """Query Unpaywall for OA status. Requires a DOI."""
+    if not doi:
+        return None
+    data = http.get(
+        "unpaywall",
+        f"https://api.unpaywall.org/v2/{doi}",
+        params={"email": mailto},
+        min_interval=0.0,
+    )
+    if not data:
+        return None
+    # Best OA location
+    best_oa = data.get("best_oa_location") or {}
+    return {
+        "source": "unpaywall",
+        "oa_status": data.get("oa_status"),  # gold, green, hybrid, bronze, closed
+        "oa_url": best_oa.get("url_for_pdf") or best_oa.get("url"),
+        "oa_version": best_oa.get("version"),  # publishedVersion, acceptedVersion, submittedVersion
+        "oa_license": best_oa.get("license"),
+        "is_oa": data.get("is_oa", False),
+        "match_score": 1.0,  # DOI lookup is exact
+    }
+
+
 # ---------------------------------------------------------------------------
 # Main search logic
 
@@ -567,8 +592,13 @@ def search_all(query: str, http: CachedHTTP, mailto: str,
         if r:
             results["pubmed"] = r
 
-    # Merge into a unified identifier set
+    # Unpaywall: DOI-based OA lookup, runs after other sources provide DOI
     merged = merge_results(results, canonical_title)
+    if merged.get("doi"):
+        r = query_unpaywall(http, merged["doi"], mailto)
+        if r:
+            results["unpaywall"] = r
+            merged = merge_results(results, canonical_title)
 
     return {
         "input_type": input_type,
@@ -638,8 +668,14 @@ def merge_results(results: dict[str, dict], canonical_title: str) -> dict:
             abstract = results[src]["abstract"]
             break
 
-    # Confidence
-    n_sources = len(results)
+    # Unpaywall OA info
+    upw = results.get("unpaywall", {})
+    oa_status = upw.get("oa_status")
+    oa_url = upw.get("oa_url")
+
+    # Confidence (count search sources, not unpaywall)
+    search_sources = [k for k in results if k != "unpaywall"]
+    n_sources = len(search_sources)
     confidence = "high" if n_sources >= 3 else "medium" if n_sources >= 2 else "low"
 
     return {
@@ -654,6 +690,8 @@ def merge_results(results: dict[str, dict], canonical_title: str) -> dict:
         "dblp": dblp_key,
         "pmid": pmid,
         "abstract": abstract,
+        "oa_status": oa_status,
+        "oa_url": oa_url,
         "confidence": confidence,
         "n_sources": n_sources,
         "evidence": [f"{src}: match_score={r.get('match_score', '?')}"

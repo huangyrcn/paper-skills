@@ -53,7 +53,9 @@ uv --version
 uv run --script "${SKILL_DIR}/scripts/search_identifiers.py" "任何查询"
 ```
 
-自动识别输入类型（DOI、arXiv ID、标题等），查询 Semantic Scholar、OpenAlex、DBLP、Crossref、arXiv、PubMed。
+自动识别输入类型（DOI、arXiv ID、标题等），按以下顺序查询学术源：
+arXiv → Semantic Scholar → OpenAlex → DBLP → Crossref → PubMed。
+拿到 DOI 后还会查询 Unpaywall 获取 OA PDF 链接。
 
 输出 JSON 到 stdout，包含：
 - `canonical_title` — 确定的论文标题
