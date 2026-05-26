@@ -14,16 +14,25 @@ argument-hint: "<论文引用>"
 
 ## 前置条件
 
-本 skill 的脚本通过 `uv run --script` 执行（自动安装依赖，无需手动 pip install）。
+本 skill 依赖 `paper-search` CLI 工具。
 
-检查 uv 是否可用：
+检查是否已安装：
 
 ```bash
-uv --version
+paper-search --version 2>/dev/null || paper-search sources 2>/dev/null
 ```
 
-如果未安装，提示用户安装：
+如果未安装：
 
+```bash
+uv tool install paper-search-mcp --from "git+https://github.com/openags/paper-search-mcp.git"
+```
+
+如果 `uv` 也未安装，先装 uv：
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
 
 ## 你可能收到的输入
 
@@ -45,26 +54,29 @@ uv --version
 
 ## 可用工具
 
-### search_identifiers.py
+### paper-search CLI
 
-查询学术源，返回结构化标识符。
+搜索学术源，返回结构化 JSON。
 
 ```bash
-uv run --script "${SKILL_DIR}/scripts/search_identifiers.py" "任何查询"
+# 搜索标题（查询所有源）
+paper-search search "Attention Is All You Need" -n 3
+
+# 指定源
+paper-search search "Attention Is All You Need" -s arxiv,semantic,dblp,crossref,pubmed,openalex -n 3
+
+# 限制年份
+paper-search search "GNN" -s semantic -y 2020-2024 -n 5
+
+# 查看可用源
+paper-search sources
 ```
 
-自动识别输入类型（DOI、arXiv ID、标题等），按以下顺序查询学术源：
-arXiv → Semantic Scholar → OpenAlex → DBLP → Crossref → PubMed。
-拿到 DOI 后还会查询 Unpaywall 获取 OA PDF 链接。
-
-输出 JSON 到 stdout，包含：
-- `canonical_title` — 确定的论文标题
-- `merged` — 合并后的标识符（doi, arxiv, authors, year, venue, ...）
-- `sources` — 各源的原始结果
+输出 JSON 包含：`papers` 数组，每个 paper 有 `paper_id`, `title`, `authors`, `abstract`, `doi`, `published_date`, `pdf_url`, `url`, `source`。
 
 ### resolve_metadata.py
 
-从标识符生成 `metadata.yaml`。
+从标识符生成 `metadata.yaml`（通过 `uv run --script` 执行）。
 
 ```bash
 # 通过 CLI 参数
@@ -73,21 +85,25 @@ uv run --script "${SKILL_DIR}/scripts/resolve_metadata.py" \
   --arxiv "2002.05287" --confidence high \
   --out "$PAPERS_DIR"
 
-# 通过 JSON stdin（推荐，从 search_identifiers.py 的 merged 字段传入）
+# 通过 JSON stdin
 echo '{"title":"...","authors":["A"],"year":2020}' | \
   uv run --script "${SKILL_DIR}/scripts/resolve_metadata.py" --from-json --out "$PAPERS_DIR"
 ```
 
 ## 你来决定怎么走
 
-根据输入类型，你自己判断处理路径：
+1. **用 paper-search 搜索** — 从结果中提取标题、作者、年份、venue、DOI、arXiv ID 等
+2. **组装 JSON** — 把提取的信息组装成 `resolve_metadata.py --from-json` 需要的格式
+3. **调 resolve_metadata.py** — 生成 `metadata.yaml`
 
-- **有直接标识符**（DOI、arXiv ID、PMID）→ 传给 `search_identifiers.py`，它会直接解析
-- **标题** → 直接传给 `search_identifiers.py`，它会跨源搜索
-- **URL** → 先判断是学术 URL 还是普通网页。学术 URL 直接传；普通网页可能需要先提取标题
-- **方法名** → 需要你推断出论文标题，再传给脚本。可能需要问用户要上下文
-- **本地 PDF** → 先检查 `$PAPERS_DIR` 是否已有。没有的话，提取标题再搜索
-- **搜索结果不理想** → 尝试换关键词、加上下文、或问用户确认
+根据输入类型调整搜索策略：
+
+- **标题** → 直接 `paper-search search "标题"`
+- **DOI** → `paper-search search "DOI" -s crossref,semantic` 或直接传给 resolve_metadata.py
+- **arXiv ID** → `paper-search search "arXiv ID" -s arxiv`
+- **方法名** → 你先推断论文标题，再搜索。可能需要问用户要上下文
+- **URL** → 先判断是学术 URL 还是普通网页。学术 URL 可直接提取标题搜索
+- **本地 PDF** → 先检查 `$PAPERS_DIR` 是否已有
 
 ## references
 
