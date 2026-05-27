@@ -7,7 +7,7 @@
       "expected_output": "Generate both card.md (quick) and card-deep.md (deep) from the acquired paper.",
       "files": [],
       "expectations": [
-        "The skill reads metadata.yaml and paper/paper.md from the folder",
+        "The skill detects input as folder_slug (metadata.yaml exists under $PAPERS_DIR)",
         "Two subagents are dispatched in parallel: structure extractor and evaluation extractor",
         "card.md is generated using the quick card template",
         "card-deep.md is generated using the deep card template",
@@ -18,13 +18,12 @@
     {
       "id": 2,
       "prompt": "帮我深度分析一下 Attention Is All You Need 这篇论文，做个结构化拆解",
-      "expected_output": "Generate card-deep.md with detailed claim verification and evidence analysis.",
+      "expected_output": "Delegate to paper-import first, then generate card-deep.md.",
       "files": [],
       "expectations": [
-        "The skill resolves the paper reference to a folder_slug first if needed",
-        "card-deep.md includes novelty assessment with star ratings",
-        "card-deep.md includes claim verification with evidence quality analysis",
-        "card-deep.md includes soundness and reproducibility assessment",
+        "The skill detects input as a paper reference (title), not a folder_slug",
+        "paper-import is called to resolve identity and acquire the paper",
+        "card-deep.md is generated with novelty assessment and star ratings",
         "The output references specific sections and page numbers from the paper"
       ]
     },
@@ -35,9 +34,46 @@
       "files": [],
       "expectations": [
         "The skill checks for metadata.yaml and paper/paper.md prerequisites",
-        "If prerequisites are missing, the skill tells the user to run paper-acquire first",
+        "If prerequisites are missing and input is a folder_slug, inform the user",
         "If prerequisites exist, card.md is generated with problem, method, key results",
         "The card includes a one-paragraph executive summary at the top"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "帮我看一下 ~/Downloads/2301.13688.pdf，做个卡片",
+      "expected_output": "Convert local PDF to markdown, resolve identity, then generate card.",
+      "files": [],
+      "expectations": [
+        "The skill detects input as a local PDF file path",
+        "pdf-to-md is called to convert the PDF to markdown",
+        "paper-search is called to resolve paper identity (arXiv ID from filename)",
+        "PDF and markdown are copied to $PAPERS_DIR/{folder_slug}/paper/",
+        "card.md is generated from the converted content"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "帮我给 Geom-GCN 做个卡片，用中文写",
+      "expected_output": "Delegate to paper-import, then generate Chinese card.",
+      "files": [],
+      "expectations": [
+        "The skill detects input as a paper reference and delegates to paper-import",
+        "Card output language is Chinese (matching user's language request)",
+        "Section headers are in Chinese (## 问题, ## 方法, ## 结果, etc.)",
+        "Frontmatter title, authors, venue remain in original English",
+        "Technical terms (Geom-GCN, GCN, ICLR) remain in English"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Give me a deep analysis of the GAT paper in English",
+      "expected_output": "Delegate to paper-import, then generate English card.",
+      "files": [],
+      "expectations": [
+        "Card output language is English (matching user's language)",
+        "Section headers are in English (## Problem, ## Method, ## Results, etc.)",
+        "All analysis content is in English"
       ]
     }
   ]
