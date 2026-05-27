@@ -206,7 +206,7 @@ def download_latex_asset(metadata_path: Path) -> list[str]:
                 check=True,
             )
         subprocess.run(
-            ["tar", "xzf", "--no-absolute-names", str(tar_path), "-C", str(latex_dir)],
+            ["tar", "xzf", str(tar_path), "-C", str(latex_dir)],
             check=True,
         )
         tar_path.unlink(missing_ok=True)
@@ -255,7 +255,7 @@ def convert_pdf_to_source(metadata_path: Path, md_lang: str) -> Path:
 
     script_path = _resolve_pdf_to_md_script()
     subprocess.run(
-        ["python3", str(script_path), str(pdf_path), "-l", md_lang],
+        [sys.executable, str(script_path), str(pdf_path), "-l", md_lang],
         check=True,
     )
 

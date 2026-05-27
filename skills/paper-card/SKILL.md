@@ -34,6 +34,7 @@ This skill does **not**:
 
 1. **已导入论文**（folder_slug）：检查 `$PAPERS_DIR/{input}/metadata.yaml` 是否存在。
    存在 → 检查 `paper/paper.md` → 生成卡片。
+   **输入看起来像 folder_slug（无 `.pdf` 后缀、无 URL scheme、无 DOI/arXiv 前缀）但目录不存在时**，告知用户该论文未导入，询问是否需要导入。
 2. **本地 PDF**：输入是本地 `.pdf` 文件路径（`Path(input).suffix == '.pdf' and Path(input).is_file()`）。
    → 调 `pdf-to-md` 转 markdown → 调 `paper-search` 解析身份 → 复制 PDF 和 markdown 到 `$PAPERS_DIR/{folder_slug}/paper/` → 生成卡片。
 3. **论文引用**（标题/DOI/arXiv ID/URL）：其他所有输入。
@@ -57,6 +58,13 @@ This skill does **not**:
 1. 调用 `paper-import` skill，传入用户的论文引用
 2. paper-import 完成 search → acquire 后，获得 folder_slug
 3. 用该 folder_slug 继续生成卡片
+
+### Windows 兼容性注意事项
+
+在 Windows 上执行 paper-acquire / pdf-to-md 的 bash 命令时：
+- 设置 `PYTHONIOENCODING=utf-8` 环境变量避免 GBK 编码错误
+- 确保 `MINERU_API_TOKEN` 在当前 shell session 中可用（检查 `$env:MINERU_API_TOKEN` 或 `os.environ`）
+- Windows 上 `python3` 可能不存在，使用 `python` 替代
 
 ## Workflow
 
