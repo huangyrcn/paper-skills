@@ -85,7 +85,17 @@ Read both files:
 
 ### Step 2: Dispatch two subagents in parallel
 
-Launch both subagents simultaneously. Each reads the full `paper.md` independently.
+Launch both subagents simultaneously. Each subagent **must read the full paper.md file first** before extracting anything. Pass the file path explicitly in the subagent prompt.
+
+**Subagent prompt template** (adapt paths for each subagent):
+
+```
+Read the file: $PAPERS_DIR/{folder_slug}/paper/paper.md
+
+Then follow the instructions in: [reference file path]
+
+Return the structured JSON output.
+```
 
 **Subagent 1 — Structure Extractor** (`references/subagent-structure.md`):
 Extracts factual, verifiable content: problem definition, method pipeline, experimental setup, results, datasets, baselines.
