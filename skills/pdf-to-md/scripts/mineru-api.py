@@ -11,6 +11,7 @@ mineru-api.py - 使用 MinerU 精准解析 API 将 PDF 转换为 Markdown
 
 import argparse
 import os
+import shutil
 import sys
 import time
 import zipfile
@@ -139,6 +140,7 @@ def download_and_extract(zip_url: str, output_dir: Path, stem: str) -> Path:
     """
     print(f"  下载结果 ZIP...")
     resp = requests.get(zip_url, stream=True)
+    resp.raise_for_status()
 
     zip_path = output_dir / f"{stem}_result.zip"
     with open(zip_path, "wb") as f:
@@ -148,6 +150,10 @@ def download_and_extract(zip_url: str, output_dir: Path, stem: str) -> Path:
     print(f"  解压 ZIP...")
     extract_dir = output_dir / f"{stem}_extracted"
     with zipfile.ZipFile(zip_path, "r") as zf:
+        for member in zf.infolist():
+            member_path = (extract_dir / member.filename).resolve()
+            if not str(member_path).startswith(str(extract_dir.resolve())):
+                raise ValueError(f"Zip-slip detected: {member.filename}")
         zf.extractall(extract_dir)
 
     # 找到 full.md 文件
@@ -164,7 +170,7 @@ def download_and_extract(zip_url: str, output_dir: Path, stem: str) -> Path:
     if md_file:
         # 移动到目标位置
         target_md = output_dir / f"{stem}.md"
-        target_md.write_text(md_file.read_text(encoding="utf-8"))
+        target_md.write_text(md_file.read_text(encoding="utf-8"), encoding="utf-8")
 
         # 提取 images 目录
         images_src = None
@@ -176,14 +182,11 @@ def download_and_extract(zip_url: str, output_dir: Path, stem: str) -> Path:
         if images_src:
             target_images = output_dir / f"{stem}_images"
             if target_images.exists():
-                import shutil
                 shutil.rmtree(target_images)
-            import shutil
             shutil.copytree(images_src, target_images)
             print(f"  提取图片到: {target_images}")
 
         # 清理临时文件
-        import shutil
         shutil.rmtree(extract_dir)
         zip_path.unlink()
 

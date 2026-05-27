@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import argparse
 import os
-import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -111,28 +110,34 @@ def download_pdf_asset(metadata_path: Path) -> Path:
     if pdf_url and "semanticscholar" in pdf_url:
         download_attempts.append(("semantic_scholar", pdf_url))
 
-    # Priority 4: Unpaywall
-    doi = aliases.get("doi")
-    if doi and requests:
-        email = os.environ.get("PAPER_SEARCH_MCP_UNPAYWALL_EMAIL", "")
-        if email:
-            try:
-                resp = requests.get(
-                    f"https://api.unpaywall.org/v2/{doi}?email={email}", timeout=15
-                )
-                if resp.ok:
-                    oa = resp.json().get("best_oa_location", {})
-                    oa_url = oa.get("url_for_pdf") or oa.get("url")
-                    if oa_url:
-                        download_attempts.append(("unpaywall", oa_url))
-            except Exception:
-                pass
+    # Priority 4: Unpaywall (deferred — sentinel triggers API call inside loop)
+    def _unpaywall_url():
+        doi = aliases.get("doi")
+        if doi and requests:
+            email = os.environ.get("PAPER_SEARCH_MCP_UNPAYWALL_EMAIL", "")
+            if email:
+                try:
+                    resp = requests.get(
+                        f"https://api.unpaywall.org/v2/{doi}?email={email}", timeout=15
+                    )
+                    if resp.ok:
+                        oa = resp.json().get("best_oa_location", {})
+                        return oa.get("url_for_pdf") or oa.get("url")
+                except Exception as exc:
+                    print(f"  ! Unpaywall lookup failed: {exc}")
+        return None
 
     # Priority 5: Publisher (direct URL)
     if pdf_url:
         download_attempts.append(("publisher", pdf_url))
 
+    download_attempts.append(("unpaywall", "__DEFERRED__"))
+
     for source, url in download_attempts:
+        if url == "__DEFERRED__":
+            url = _unpaywall_url()
+            if not url:
+                continue
         try:
             print(f"  Trying {source}: {url}")
             if requests:
@@ -201,7 +206,7 @@ def download_latex_asset(metadata_path: Path) -> list[str]:
                 check=True,
             )
         subprocess.run(
-            ["tar", "xzf", str(tar_path), "-C", str(latex_dir)],
+            ["tar", "xzf", "--no-absolute-names", str(tar_path), "-C", str(latex_dir)],
             check=True,
         )
         tar_path.unlink(missing_ok=True)
@@ -218,7 +223,7 @@ def convert_latex_to_source(metadata_path: Path) -> Path:
     latex_dir = paper_dir / "latex"
     # Also check paper_dir itself for pre-existing bundles with tex files at top level
     main_tex = find_main_tex(latex_dir) if latex_dir.is_dir() else None
-    if main_tex is None and paper_dir.glob("*.tex"):
+    if main_tex is None and any(paper_dir.glob("*.tex")):
         main_tex = find_main_tex(paper_dir)
     if main_tex is None:
         raise FileNotFoundError("No usable TeX source found")

@@ -16,9 +16,6 @@ identity:
     arxiv: "2002.05287"
     openalex: "W2995509042"
     semantic_scholar: "04f3203f1214063436d81ce0c2ad7623204da488"
-    dblp: null
-    pmid: null
-    pmcid: null
   resolution_confidence: "high"
   resolution_evidence:
     - "arXiv title exact match"
@@ -80,7 +77,7 @@ acquisition_hints:
 
 `resolve_metadata.py` generates the canonical structure with `identity`, `bibliography`, `urls`, and `acquisition_hints` sections. The `aliases` dict contains only keys with non-null values (e.g., `doi`, `arxiv`, `openalex`).
 
-Empty containers for downstream skills are pre-initialized:
+Empty containers for downstream skills are pre-initialized by `resolve_metadata.py`:
 
 ```yaml
 assets: {}
@@ -101,7 +98,7 @@ repo_search:
 | `normalization` | **paper-acquire** | PDF→MD 转换记录 |
 | `repo_search` | **paper-repo** | 代码仓库发现结果 |
 
-- **paper-search** owns `identity`, `bibliography`, `urls`, `acquisition_hints`, and the compatibility projection.
+- **paper-search** owns `identity`, `bibliography`, `urls`, and `acquisition_hints`.
 - **paper-acquire** owns `assets`, `normalization`, and may update `urls.pdf`.
 - **paper-repo** owns `repo_search`.
 - None may modify `identity` or `bibliography`.

@@ -125,7 +125,7 @@ def build_metadata(
         "identity": {
             "canonical_url": canonical_url,
             "primary_id": _pick_primary_id(doi, arxiv, s2id),
-            "aliases": {k: v for k, v in aliases.items()},
+            "aliases": {k: v for k, v in aliases.items() if v is not None},
             "resolution_confidence": confidence,
             "resolution_evidence": evidence or [],
         },
@@ -149,6 +149,8 @@ def build_metadata(
             "latex_available": bool(arxiv),
             "latex_url": f"https://arxiv.org/e-print/{arxiv}" if arxiv else None,
         },
+        "assets": {},
+        "repo_search": {"selected": None, "candidates": []},
     }
     return metadata
 
@@ -240,7 +242,10 @@ def main():
         ap.error("--title and --authors are required (unless using --from-json)")
 
     if args.from_json:
-        data = json.loads(sys.stdin.read())
+        try:
+            data = json.loads(sys.stdin.read())
+        except json.JSONDecodeError as exc:
+            ap.error(f"Invalid JSON on stdin: {exc}")
         title = data["title"]
         authors = data["authors"]
         year = data.get("year")
@@ -293,7 +298,7 @@ def main():
     if out_path.exists() and not args.force:
         print(f"Metadata already exists: {out_path}")
         print("Use --force to overwrite, or delete to regenerate.")
-        sys.exit(1)
+        sys.exit(0)
 
     write_metadata_yaml(out_path, metadata)
     print(f"Title: {title}")
