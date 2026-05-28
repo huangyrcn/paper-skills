@@ -13,7 +13,7 @@ argument-hint: "<pdf_path> [-l lang]"
 
 This skill owns:
 
-- PDF-to-Markdown conversion via MinerU API
+- PDF-to-Markdown conversion
 - Output: `<pdf_stem>.md` and `<pdf_stem>_images/`
 
 This skill does **not**:
@@ -22,73 +22,45 @@ This skill does **not**:
 - Manage paper metadata (use `paper-search`)
 - Generate reading notes (use `paper-card`)
 
-Converts a PDF to:
+## Conversion backends
 
-```text
-<pdf_stem>.md
-<pdf_stem>_images/
-```
+| 优先级 | 后端 | 需要 | 质量 |
+|--------|------|------|------|
+| 1 | MinerU API (VLM) | `MINERU_API_TOKEN` | 最高（公式/表格/混合排版） |
+| 2 | marker (本地) | `uv tool install marker-pdf` | 高（本地推理，无需 API） |
 
-## Prerequisite
-
-Set the MinerU API token:
-
-```bash
-export MINERU_API_TOKEN="your_token_here"
-```
-
-Check availability:
-
-```bash
-python3 "${SKILL_DIR}/scripts/mineru-api.py" --help
-```
+`hydrate_raw.py` 自动按优先级尝试：有 token 用 MinerU，没有则 fallback 到 marker。
 
 ## Usage
 
 ```bash
+# MinerU API（需要 MINERU_API_TOKEN）
 python3 "${SKILL_DIR}/scripts/mineru-api.py" <pdf_path> [-l lang]
+
+# marker 本地（不需要 token）
+marker <pdf_path> --output_dir <output_dir>
 ```
-
-- `pdf_path`: local PDF path
-- `-l lang`: language hint, `en` or `ch`
-
-## Backend contract
-
-- Supported backend: MinerU API only
-- Model: VLM (Vision Language Model)
-- Goal: highest available parsing quality for formulas, tables, and mixed-layout academic PDFs
-- No local GPU inference — all processing via remote API
 
 ## Output behavior
 
 - Output files are written next to the PDF
-- Existing Markdown and image directories for the same stem may be overwritten
 - Example: `paper.pdf` → `paper.md` and `paper_images/`
 
 ## Error handling
 
 | Condition | Behavior |
 |-----------|----------|
-| `MINERU_API_TOKEN` not set | Script exits with clear error message asking user to set the token |
-| API returns 401/403 | Token is invalid or expired — inform user to regenerate |
-| API timeout (>5min) | Large PDFs may timeout — suggest splitting or retrying |
-| PDF is image-only (scanned) | VLM handles OCR; quality depends on image resolution |
-| PDF > 100MB | May hit API limits — warn user and suggest splitting |
-| Empty or corrupt PDF | Script exits with error; do not produce empty .md |
+| `MINERU_API_TOKEN` not set | 自动 fallback 到 marker |
+| MinerU API 返回 401/403 | Token 无效，fallback 到 marker |
+| marker 未安装 | 报错，提示 `uv tool install marker-pdf` |
+| 两个后端都失败 | 报错，列出所有失败原因 |
 
-## Large file strategy
+## Agent 前置检查
 
-For PDFs over 50MB or 100+ pages:
-- The MinerU API handles large files, but processing time scales with page count
-- If the API returns a timeout error, the user can retry or split the PDF
-- Do not attempt local fallback — the API-only contract ensures consistent quality
+在调用 `hydrate_raw.py` 之前，agent 应检查转换能力是否就绪：
 
-## Integration with paper-acquire
+1. 有 `MINERU_API_TOKEN` → 直接使用 MinerU API
+2. 无 token → 检查 `marker` 是否可用（`which marker`）
+3. marker 也不可用 → **主动为用户安装**：`uv tool install marker-pdf`，而非等脚本报错
 
-When called from `paper-acquire`, the script is invoked as:
-
-```bash
-python3 "${SKILL_DIR}/../pdf-to-md/scripts/mineru-api.py" paper/paper.pdf -l en
-```
-
-The output lands in `paper/paper.md` and `paper/paper_images/`.
+这样用户无需手动干预，管线可以自动降级运行。

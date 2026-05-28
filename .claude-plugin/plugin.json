@@ -15,9 +15,8 @@
     "MINERU_API_TOKEN": {
       "type": "string",
       "title": "MinerU API Token",
-      "description": "PDF→Markdown 转换所需的 MinerU API Token (https://mineru.net)",
-      "sensitive": true,
-      "required": true
+      "description": "MinerU API Token（可选）。配置后使用 MinerU 云端 VLM 转换；未配置则自动 fallback 到本地 marker 工具",
+      "sensitive": true
     },
     "UNPAYWALL_EMAIL": {
       "type": "string",

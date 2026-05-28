@@ -105,12 +105,14 @@ if identity.aliases.doi exists and no PDF yet:
 
 ### 3. Normalization (PDF → Markdown)
 
-使用 `pdf-to-md` skill 的 MinerU 进行转换：
+`hydrate_raw.py` 自动处理转换，按以下优先级选择后端：
+
+1. **MinerU API**（需要 `MINERU_API_TOKEN`）：最高质量，支持公式/表格/混合排版
+2. **marker**（本地工具）：无需 API，质量高。未安装时 agent 应主动执行 `uv tool install marker-pdf`
 
 ```bash
-# PDF → MinerU
-python3 "${SKILL_DIR}/../pdf-to-md/scripts/mineru-api.py" paper/paper.pdf -l en
-# 输出: paper/paper.md + paper/paper_images/
+# 脚本内部自动选择后端，无需手动指定
+python3 "${SKILL_DIR}/scripts/hydrate_raw.py" --metadata metadata.yaml --md-lang en
 ```
 
 ### 4. Update metadata.yaml
@@ -160,7 +162,7 @@ python3 "${SKILL_DIR}/scripts/hydrate_raw.py" \
 | `--skip-latex` | 跳过 LaTeX 下载 | 不跳过 |
 | `--skip-normalize` | 跳过 paper.md 生成 | 不跳过 |
 
-脚本自动处理 LaTeX → pandoc 优先、PDF → MinerU 回退的 normalization 策略。
+脚本自动处理 LaTeX → pandoc 优先、PDF → MinerU/marker 回退的 normalization 策略。
 仓库搜索由 `paper-repo` 负责，本脚本不处理。
 
 适合需要一次性完成所有步骤的场景；如果需要逐步控制（如只下载 PDF 不转 markdown），按上面的手动流程操作。
@@ -168,7 +170,8 @@ python3 "${SKILL_DIR}/scripts/hydrate_raw.py" \
 ## Dependencies
 
 - `web-kit` skill — wget, cdp-download, crwlr
-- `pdf-to-md` skill — MinerU API PDF conversion
+- `pdf-to-md` skill — MinerU API PDF conversion（可选，无 token 时 fallback 到 marker）
+- `marker` — 本地 PDF 转 markdown（`uv tool install marker-pdf`，MinerU 不可用时自动使用）
 
 ## References
 

@@ -109,6 +109,92 @@ def _extract_pdf_url_from_html(html: str) -> str | None:
     return None
 
 
+def _resolve_cdp_download_script() -> Path | None:
+    """Locate the cdp-download script in the sibling web-kit skill."""
+    candidates = [
+        Path(__file__).resolve().parents[3] / "web-kit" / "skills" / "cdp-download" / "scripts" / "cdp-download",
+        Path.home() / ".agents" / "skills" / "web-kit" / "scripts" / "cdp-download",
+    ]
+    for p in candidates:
+        if p.is_file():
+            return p
+    return None
+
+
+def _cdp_download(url: str, output_path: Path) -> bool:
+    """Try downloading via cdp-download script (browser-based). Returns True on success."""
+    script = _resolve_cdp_download_script()
+    if not script:
+        return False
+    try:
+        result = subprocess.run(
+            [sys.executable, str(script), url, str(output_path)],
+            capture_output=True, text=True, timeout=120,
+        )
+        if result.returncode == 0 and output_path.is_file() and output_path.stat().st_size > 1000:
+            with open(output_path, "rb") as f:
+                if f.read(4) == b"%PDF":
+                    return True
+            output_path.unlink(missing_ok=True)
+        return False
+    except Exception as exc:
+        print(f"  ! cdp-download failed: {exc}")
+        return False
+
+
+def _verify_pdf_identity(pdf_path: Path, metadata: dict, threshold: float = 0.4) -> None:
+    """Verify that the downloaded PDF matches the intended paper.
+
+    Extracts title and first-author surname from page 1 via pdftotext,
+    then compares against metadata.yaml. Raises RuntimeError on mismatch.
+    """
+    import difflib
+    import shutil
+
+    if not shutil.which("pdftotext"):
+        print("  ! pdftotext not found, skipping identity verification")
+        return
+
+    result = subprocess.run(
+        ["pdftotext", "-f", "1", "-l", "1", str(pdf_path), "-"],
+        capture_output=True, text=True, timeout=30,
+    )
+    page1 = result.stdout.lower()
+    if len(page1.strip()) < 50:
+        print("  ! Could not extract text from PDF page 1, skipping identity verification")
+        return
+
+    expected_title = metadata.get("title", "").lower()
+    authors = metadata.get("bibliography", {}).get("authors", [])
+    first_author = ""
+    if authors:
+        # Handle "Last, First" and "First Last" formats
+        raw = authors[0] if isinstance(authors[0], str) else str(authors[0])
+        first_author = raw.split(",")[0].strip().split()[-1].lower()
+
+    # Title similarity: use longest common substring ratio
+    title_sim = difflib.SequenceMatcher(None, expected_title[:120], page1[:500]).ratio()
+    # Also check if expected title words appear in page 1
+    title_words = [w for w in expected_title.split() if len(w) > 3]
+    words_found = sum(1 for w in title_words if w in page1)
+    word_ratio = words_found / len(title_words) if title_words else 0
+
+    author_found = first_author in page1 if first_author else True
+
+    combined_score = max(title_sim, word_ratio)
+    if combined_score < threshold or not author_found:
+        snippet = page1[:200].replace("\n", " ").strip()
+        raise RuntimeError(
+            f"PDF identity mismatch!\n"
+            f"  Expected title: {metadata.get('title', '?')[:80]}\n"
+            f"  Expected author: {first_author}\n"
+            f"  Title similarity: {combined_score:.0%} (threshold: {threshold:.0%})\n"
+            f"  Author found: {author_found}\n"
+            f"  PDF page 1: {snippet}..."
+        )
+    print(f"  ✓ Identity verified (title match: {combined_score:.0%}, author: {first_author})")
+
+
 def register_pdf(metadata_path: Path, pdf_source: Path) -> Path:
     """Copy a manually obtained PDF into the paper directory and update assets."""
     metadata, paper_dir, assets = ensure_assets(metadata_path)
@@ -233,6 +319,21 @@ def download_pdf_asset(metadata_path: Path) -> Path:
         except Exception as exc:
             print(f"  ! {source} failed: {exc}")
 
+    # Priority 7: cdp-download (browser-based, handles CSP/reCAPTCHA)
+    cdp_urls = [(s, u) for s, u in download_attempts if u != "__DEFERRED__"]
+    for source, url in cdp_urls:
+        cdp_source = f"cdp-{source}"
+        try:
+            print(f"  Trying {cdp_source}: {url}")
+            if _cdp_download(url, pdf_path):
+                metadata.setdefault("assets", {}).setdefault("paper_pdf", {})
+                metadata["assets"]["paper_pdf"]["source"] = cdp_source
+                persist_metadata(metadata_path, metadata)
+                return pdf_path
+            print(f"  ! {cdp_source}: not a PDF or download failed")
+        except Exception as exc:
+            print(f"  ! {cdp_source} failed: {exc}")
+
     raise RuntimeError("All PDF download sources failed")
 
 
@@ -308,6 +409,41 @@ def convert_latex_to_source(metadata_path: Path) -> Path:
     return source_path
 
 
+def _has_mineru_token() -> bool:
+    """Check if MinerU API token is available."""
+    return bool(
+        os.environ.get("MINERU_API_TOKEN")
+        or os.environ.get("CLAUDE_PLUGIN_OPTION_MINERU_API_TOKEN")
+    )
+
+
+def _convert_via_marker(pdf_path: Path, source_path: Path, md_lang: str) -> None:
+    """Convert PDF to markdown using local marker tool."""
+    import shutil
+    if not shutil.which("marker"):
+        raise FileNotFoundError(
+            "marker not found. Install with: uv tool install marker-pdf\n"
+            "Or set MINERU_API_TOKEN to use MinerU cloud API instead."
+        )
+    out_dir = pdf_path.parent / "marker_output"
+    out_dir.mkdir(exist_ok=True)
+    subprocess.run(
+        ["marker", str(pdf_path), "--output_dir", str(out_dir)],
+        check=True,
+    )
+    # marker outputs to out_dir/<pdf_stem>/<pdf_stem>.md
+    stem = pdf_path.stem
+    marker_md = out_dir / stem / f"{stem}.md"
+    if not marker_md.is_file():
+        # marker may output directly as <stem>.md in out_dir
+        marker_md = out_dir / f"{stem}.md"
+    if not marker_md.is_file():
+        raise FileNotFoundError(f"marker output not found: {marker_md}")
+    import shutil as _shutil
+    _shutil.move(str(marker_md), str(source_path))
+    _shutil.rmtree(out_dir, ignore_errors=True)
+
+
 def convert_pdf_to_source(metadata_path: Path, md_lang: str) -> Path:
     metadata, paper_dir, assets = ensure_assets(metadata_path)
     pdf_path = paper_dir / "paper.pdf"
@@ -316,19 +452,36 @@ def convert_pdf_to_source(metadata_path: Path, md_lang: str) -> Path:
     if not pdf_path.is_file():
         raise FileNotFoundError(f"Missing PDF: {pdf_path}")
 
-    script_path = _resolve_pdf_to_md_script()
-    subprocess.run(
-        [sys.executable, str(script_path), str(pdf_path), "-l", md_lang],
-        check=True,
-    )
+    # Strategy 1: MinerU API (preferred, highest quality)
+    if _has_mineru_token():
+        try:
+            script_path = _resolve_pdf_to_md_script()
+            subprocess.run(
+                [sys.executable, str(script_path), str(pdf_path), "-l", md_lang],
+                check=True,
+            )
+            if source_path.is_file():
+                metadata["normalization"] = {"backend": "pdf-mineru", "source": "paper/paper.md"}
+                assets["source"] = "paper/paper.md"
+                persist_metadata(metadata_path, metadata)
+                return source_path
+        except Exception as exc:
+            print(f"  ! MinerU failed, trying fallback: {exc}")
+    else:
+        print("  MINERU_API_TOKEN not set, trying local fallback...")
 
-    if not source_path.is_file():
-        raise FileNotFoundError(f"Expected MinerU output missing: {source_path}")
-
-    metadata["normalization"] = {"backend": "pdf-mineru", "source": "paper/paper.md"}
-    assets["source"] = "paper/paper.md"
-    persist_metadata(metadata_path, metadata)
-    return source_path
+    # Strategy 2: marker (local, no API needed)
+    try:
+        _convert_via_marker(pdf_path, source_path, md_lang)
+        metadata["normalization"] = {"backend": "pdf-marker", "source": "paper/paper.md"}
+        assets["source"] = "paper/paper.md"
+        persist_metadata(metadata_path, metadata)
+        return source_path
+    except Exception as exc:
+        raise RuntimeError(
+            f"PDF conversion failed. MinerU token not set and marker fallback failed: {exc}\n"
+            "Fix: set MINERU_API_TOKEN or install marker: uv tool install marker-pdf"
+        ) from exc
 
 
 def normalize_source(metadata_path: Path, md_lang: str) -> Path:
@@ -352,8 +505,11 @@ def run_pipeline(
     skip_latex: bool,
     skip_normalize: bool,
 ) -> None:
+    metadata = load_metadata(metadata_path)
+
     if not skip_pdf:
         pdf_path = download_pdf_asset(metadata_path)
+        _verify_pdf_identity(pdf_path, metadata)
         print(f"✓ PDF: {pdf_path}")
 
     if not skip_latex:
@@ -384,6 +540,10 @@ def main() -> None:
 
     if args.pdf:
         register_pdf(metadata_path, Path(args.pdf).resolve())
+        _verify_pdf_identity(
+            metadata_path.parent / "paper" / "paper.pdf",
+            load_metadata(metadata_path),
+        )
         print(f"✓ Registered manual PDF: {args.pdf}")
 
     run_pipeline(
