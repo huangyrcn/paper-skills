@@ -104,9 +104,11 @@ DOI / arXiv ID / OpenReview URL / DBLP URL / PMID：
 
 ### 本地 PDF
 
-1. 检查 `$PAPERS_DIR` 是否已有该文件
-2. 已存在则直接读取 metadata.yaml，流程结束
-3. 不存在则提示用户先用 paper-acquire 下载
+用户已提供本地 PDF 路径，说明"获取 PDF"已完成。paper-search 需要从 PDF 识别论文身份：
+
+1. 从 PDF 元数据或首页提取标识符（DOI、arXiv ID、标题）
+2. 如果 `$PAPERS_DIR` 已有该论文的 metadata.yaml，直接读取，流程结束
+3. 否则用提取的标识符进入 Step 2 CLI 查询
 
 ### 从搜索结果提取
 
@@ -177,14 +179,16 @@ Year 按 source authority 决定，不按工具类型决定：
    - proceedings page
    - OpenReview accepted / poster / oral page
 2. **DBLP 正式会议/期刊条目中的 year**（`extra` 中的 `year`，非 CoRR）
-3. **Crossref `published_date`**
+3. **Crossref `published_date`**（仅 `journal-article` / `proceedings-article` 类型，`posted-content` 不算）
 4. **OpenAlex `published_date`**
 5. **arXiv `published_date`**（首次提交年份）
 
 普通搜索结果 snippet 中的 year 仅作候选证据，不直接参与决策。
 arXiv `updated_date` 忽略不用。
 
-**tiebreaker**：对于未正式发表的 arXiv 预印本，如果多个源返回不同年份，取较新年份。已发表论文以 venue 年份为准，不存在 tiebreaker。
+**tiebreaker**：
+- 已发表论文以 venue 年份为准，不存在 tiebreaker。
+- 未正式发表的预印本：`year` = 首次公开年份（first submitted year）。arXiv `updated_date` 不进入 `year`。如果多个源返回不同年份，优先取源自身的首次提交日期，而非更新后的聚合日期。例如 2023 arXiv 预印本 2025 更新过 → `year` = 2023。
 
 ### Venue（发表场所）
 
@@ -230,12 +234,16 @@ arXiv `updated_date` 忽略不用。
 
 | 证据 | publication_status |
 |------|-------------------|
-| 正式 proceedings / journal page / Crossref DOI / DBLP conf or journal key | `"published"` |
+| 正式 proceedings / journal page / DBLP conf or journal key | `"published"` |
+| Crossref DOI，type 为 `journal-article` 或 `proceedings-article` | `"published"` |
 | 官方 accepted list / OpenReview accepted / conference poster page，暂未见正式 proceedings | `"accepted"` |
 | OpenReview submission page，未见 acceptance | `"submitted"` 或 `"under_review"` |
 | 只有 arXiv / bioRxiv / medRxiv | `"preprint"` |
+| Crossref DOI，type 为 `posted-content` / `proceedings-article` 但 venue 为 preprint server | `"preprint"` |
 | OpenReview withdrawn / withdrawn notice | `"withdrawn"` |
 | 无法判断 | `"unknown"` |
+
+注意：Crossref DOI 不等于正式发表。Crossref 的 `categories` 字段含 `posted-content` 时表示预印本，含 `journal-article` 或 `proceedings-article` 时才是正式发表。
 
 ### 调用脚本
 
