@@ -46,7 +46,13 @@ This skill does **not**:
   URL
     → 阅读该 URL 内容 → 提取论文身份 → CLI 结构化验证
   本地 PDF
-    → 检查 $PAPERS_DIR 是否已有 → 有则直接读取 metadata.yaml
+    → 路径存在？
+        → 否：提示路径无效
+        → 是：检查 $PAPERS_DIR 是否已有 metadata.yaml
+            → 有：读取并结束
+            → 无：读取 PDF 元数据/首页文本
+                  → 提取 DOI / arXiv ID / title / authors
+                  → 进入 Step 2
          |
          v
   Step 2: paper-search CLI (progressive, layered)
