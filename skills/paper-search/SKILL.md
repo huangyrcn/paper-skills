@@ -28,11 +28,11 @@ This skill does **not**:
 
 ## Tools
 
-This skill uses two tools:
+This skill uses two types of tools:
 
 | Tool | Role |
 |------|------|
-| `web-kit` (`ask-search`, `crwlr`) | Web search to locate/verify paper identity and extract venue info |
+| 网页搜索工具（如 web-kit） | Web search to locate/verify paper identity and extract venue info |
 | `paper-search` CLI | Query 23 academic sources for structured metadata (IDs, authors, abstract) |
 
 ## Pipeline
@@ -41,7 +41,7 @@ This skill uses two tools:
 Any input (title / DOI / arXiv / URL / description)
   |
   v
-Step 1: web-kit (mandatory for all inputs)
+Step 1: 网页搜索（mandatory for all inputs）
   - Locate or verify the paper
   - Extract venue info (OpenReview, conference pages, DBLP listings)
   |
@@ -54,8 +54,8 @@ Step 2: paper-search CLI (progressive, layered)
   v
 Step 3: Merge + resolve conflicts
   - Year: from CLI bib sources only
-  - Venue: web-kit primary, CLI extra field supplement
-  - IDs/Authors/Abstract: CLI (structured) > web-kit
+  - Venue: 网页搜索 primary, CLI extra field supplement
+  - IDs/Authors/Abstract: CLI (structured) > 网页搜索
   |
   v
 Step 4: resolve_metadata.py → metadata.yaml
@@ -81,26 +81,26 @@ uv tool install paper-search-mcp --from "git+https://github.com/openags/paper-se
 | `PAPER_SEARCH_MCP_UNPAYWALL_EMAIL` | Unpaywall 必须 | — |
 | `PAPER_SEARCH_MCP_SEMANTIC_SCHOLAR_API_KEY` | 提高 S2 限速 | — |
 
-## Step 1: web-kit 搜索（所有输入必做）
+## Step 1: 网页搜索（所有输入必做）
 
-所有输入都先用 web-kit 搜索。这一步的目的：
+所有输入都先用网页搜索确认。这一步的目的：
 1. 定位或验证论文身份
 2. 提取 venue 信息（OpenReview 页面、会议 virtual page、DBLP 列表）
 3. 对于模糊输入（DOI/arXiv/URL/描述），解析出具体论文
 
 ### 搜索策略
 
-| 输入类型 | web-kit 搜索方式 |
-|---------|-----------------|
-| 标题 | `ask-search "{title}"` |
-| DOI | `ask-search "{doi}"` |
-| arXiv ID | `ask-search "arxiv {arxiv_id}"` |
-| URL | `crwlr` 直接读取页面内容 |
-| 方法名 | `ask-search "{method} paper"` → 推断论文标题，可能需问用户上下文 |
-| 自然语言描述 | `ask-search "{description}"` → 用户确认是哪篇 |
+| 输入类型 | 网页搜索方式 |
+|---------|------------|
+| 标题 | 网页搜索 "{title}" |
+| DOI | 网页搜索 "{doi}" |
+| arXiv ID | 网页搜索 "arxiv {arxiv_id}" |
+| URL | 网页抓取直接读取页面内容 |
+| 方法名 | 网页搜索 "{method} paper" → 推断论文标题，可能需问用户上下文 |
+| 自然语言描述 | 网页搜索 "{description}" → 用户确认是哪篇 |
 | 本地 PDF | 先检查 `$PAPERS_DIR` 是否已有该文件，已存在则直接读取 metadata.yaml |
 
-### 从 web-kit 结果提取
+### 从搜索结果提取
 
 重点关注：
 - **OpenReview 链接**：`openreview.net/forum?id=xxx` → 确认论文在 OpenReview 上
@@ -145,7 +145,7 @@ paper-search search "<title>" -n 5
 **"没找到 venue" 的判定**：以下情况视为没找到，需要进入下一层：
 - CLI 结果中 `venue` 字段为空
 - CLI `extra` 中 venue 为 `"CoRR"`（arXiv 预印本标记，不算正式 venue）
-- web-kit Step 1 已找到 venue（如 OpenReview/会议页面）→ CLI 只需 Layer 1 获取 IDs，不需要继续
+- 网页搜索 Step 1 已找到 venue（如 OpenReview/会议页面）→ CLI 只需 Layer 1 获取 IDs，不需要继续
 
 ### 解析 CLI `extra` 字段
 
@@ -156,7 +156,7 @@ venue 信息在 CLI 输出的 `extra` 字段里（字符串形式的 dict），�
 | DBLP | `venue` | `{'venue': 'ICLR', 'year': '2020'}` |
 | Crossref | `container_title` | `{'container_title': 'Neurocomputing', 'publisher': 'Elsevier'}` |
 
-**注意**：DBLP 可能对已录取的论文仍显示 `venue: 'CoRR'`（arXiv 预印本标记），此时以 web-kit Step 1 的 venue 为准。
+**注意**：DBLP 可能对已录取的论文仍显示 `venue: 'CoRR'`（arXiv 预印本标记），此时以 Step 1 网页搜索的 venue 为准。
 
 ## Step 3: 合并与冲突解决
 
@@ -170,21 +170,21 @@ venue 信息在 CLI 输出的 `extra` 字段里（字符串形式的 dict），�
 4. arXiv `published_date`（首次提交日期）
 
 **arXiv 的 `updated_date` 忽略不用**——只用 `published_date`（首次提交年份）。
-web-kit 的 year 仅作参考，不参与决策。
+网页搜索的 year 仅作参考，不参与决策。
 
 **tiebreaker**：对于未正式发表的 arXiv 预印本，如果多个源返回不同年份，取较新年份。已发表论文以 venue 年份为准，不存在 tiebreaker。
 
 ### Venue（发表场所）
 
-- **web-kit 是 venue 的主要来源**（OpenReview、会议 virtual page、会议程序册）
+- **网页搜索是 venue 的主要来源**（OpenReview、会议 virtual page、会议程序册）
 - CLI `extra` 字段作为补充（DBLP `venue` key、Crossref `container_title`）
-- 如果 DBLP 显示 `CoRR` 但 web-kit 找到会议页面，以 web-kit 为准
+- 如果 DBLP 显示 `CoRR` 但网页搜索找到会议页面，以网页搜索为准
 
 ### 其他字段
 
-- **IDs**（doi, arxiv, openalex, dblp, pmid）：CLI 结构化数据 > web-kit
-- **Authors**：CLI > web-kit（web-kit 可能截断）
-- **Abstract**：CLI > web-kit（web-kit 可能截断）
+- **IDs**（doi, arxiv, openalex, dblp, pmid）：CLI 结构化数据 > 网页搜索
+- **Authors**：CLI > 网页搜索（网页搜索可能截断）
+- **Abstract**：CLI > 网页搜索（网页搜索可能截断）
 
 ## Step 4: 生成 metadata.yaml
 
@@ -218,7 +218,7 @@ web-kit 的 year 仅作参考，不参与决策。
 
 | 证据 | publication_status |
 |------|-------------------|
-| web-kit 找到会议 virtual page 或 OpenReview poster/oral/spotlight | `"accepted"` |
+| 网页搜索找到会议 virtual page 或 OpenReview poster/oral/spotlight | `"accepted"` |
 | DBLP key 在会议下（不是 CoRR） | `"published"` |
 | Crossref DOI 指向期刊/会议 | `"published"` |
 | 只有 arXiv / DBLP 显示 CoRR / 无 venue | `"unknown"` |
