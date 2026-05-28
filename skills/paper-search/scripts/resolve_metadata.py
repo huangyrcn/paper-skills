@@ -205,6 +205,7 @@ def write_metadata_yaml(path: Path, metadata: dict) -> None:
         with open(path, "w") as f:
             json.dump(metadata, f, ensure_ascii=False, indent=2)
         print(f"Warning: PyYAML not installed, wrote as JSON: {path}", file=sys.stderr)
+        print("  Run with: uv run --script resolve_metadata.py", file=sys.stderr)
 
 
 def main():
@@ -229,7 +230,7 @@ def main():
                     choices=["high", "medium", "low"])
     ap.add_argument("--evidence", nargs="*", default=[],
                     help="Resolution evidence strings")
-    default_out = Path(os.environ.get("PAPERS_DIR", "~/docs/papers")).expanduser()
+    default_out = Path(os.environ.get("CLAUDE_PLUGIN_OPTION_PAPERS_DIR") or os.environ.get("PAPERS_DIR", "~/docs/papers")).expanduser()
     ap.add_argument("--out", type=Path, default=default_out,
                     help="Output directory (default: $PAPERS_DIR or ~/docs/papers)")
     ap.add_argument("--from-json", action="store_true",

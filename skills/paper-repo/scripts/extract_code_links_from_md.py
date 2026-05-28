@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
-"""
-Extract code-related links from paper.md with surrounding context.
+# /// script
+# requires-python = ">=3.10"
+# dependencies = []
+# ///
+"""Extract code-related links from paper.md with surrounding context.
 
 Scans markdown for:
 - Explicit code links (github.com, gitlab.com, bitbucket.org)

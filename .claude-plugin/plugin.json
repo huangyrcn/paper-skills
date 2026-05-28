@@ -1,8 +1,34 @@
 {
   "name": "paper-skills",
   "description": "Academic paper workflow skills: search, acquire, read notes, repo discovery, import, and PDF-to-markdown conversion.",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "author": {
     "name": "paper-skills"
+  },
+  "userConfig": {
+    "PAPERS_DIR": {
+      "type": "directory",
+      "title": "Papers Directory",
+      "description": "论文存储根目录，所有论文数据写入此目录下",
+      "default": "~/docs/papers"
+    },
+    "MINERU_API_TOKEN": {
+      "type": "string",
+      "title": "MinerU API Token",
+      "description": "PDF→Markdown 转换所需的 MinerU API Token (https://mineru.net)",
+      "sensitive": true,
+      "required": true
+    },
+    "UNPAYWALL_EMAIL": {
+      "type": "string",
+      "title": "Unpaywall Email",
+      "description": "用于 Unpaywall 开放获取查询的邮箱地址（可选，提高 PDF 下载成功率）"
+    },
+    "SEMANTIC_SCHOLAR_API_KEY": {
+      "type": "string",
+      "title": "Semantic Scholar API Key",
+      "description": "提高 Semantic Scholar 搜索速率限制（可选，供 paper-search-mcp CLI 使用）",
+      "sensitive": true
+    }
   }
 }

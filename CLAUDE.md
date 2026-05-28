@@ -21,7 +21,7 @@ pdf-to-md is a utility called by paper-acquire
 | `paper-import` | Orchestrator — chains search → acquire → repo | Control flow only |
 | `paper-search` | Identity resolution via 23 academic sources | `metadata.yaml` (identity, bibliography, urls, acquisition_hints) |
 | `paper-acquire` | PDF download + PDF→Markdown normalization | `paper.pdf`, `paper.md`, `paper_images/` |
-| `paper-card` | Structured reading notes via parallel subagents | `card.md`, `card-deep.md` |
+| `paper-card` | Structured reading notes via extraction + template filling | `card.md`, `card-deep.md` |
 | `paper-repo` | Code repository discovery + verification + clone | `repo/`, `repo_search` section in metadata.yaml |
 | `pdf-to-md` | PDF→Markdown via MinerU API (called by paper-acquire) | `.md` + `_images/` |
 
@@ -64,23 +64,36 @@ uv run --script "${SKILL_DIR}/scripts/hydrate_raw.py" \
 uv run --script "${SKILL_DIR}/scripts/extract_urls_from_pdf.py" paper.pdf
 uv run --script "${SKILL_DIR}/scripts/extract_code_links_from_md.py" paper.md
 
-# pdf-to-md: convert PDF via MinerU API (requires MINERU_API_TOKEN)
+# pdf-to-md: convert PDF via MinerU API (requires MINERU_API_TOKEN in plugin settings or env)
 uv run --script "${SKILL_DIR}/scripts/mineru-api.py" paper.pdf -l en
 ```
 
 ## External Dependencies
 
 - **paper-search CLI**: `uv tool install paper-search-mcp --from "git+https://github.com/openags/paper-search-mcp.git"`
-- **MinerU API**: requires `MINERU_API_TOKEN` env var
+- **MinerU API**: requires `MINERU_API_TOKEN` — configure via plugin settings (recommended) or env var
 - **web-kit skill** (separate plugin): used for PDF download (`wget`, `cdp-download`) and repo page scraping (`crwlr`)
 
-## Paper Card Subagent Pattern
+## Plugin Configuration
 
-`paper-card` dispatches two parallel subagents that independently read `paper.md`:
-1. **Structure Extractor** — factual content (method, results, datasets)
-2. **Evaluation Extractor** — judgments (novelty, soundness, limitations)
+`plugin.json` declares `userConfig` options that prompt users during installation. Values are exported as `CLAUDE_PLUGIN_OPTION_<KEY>` environment variables to plugin subprocesses. Python scripts check these first, then fall back to standard env var names.
 
-The main agent then synthesizes both outputs into the card templates. Reference schemas are in `skills/paper-card/references/`.
+| userConfig Key | Standard Env Var | Type | Default | Notes |
+|---|---|---|---|---|
+| `PAPERS_DIR` | `PAPERS_DIR` | directory | `~/docs/papers` | Paper storage root |
+| `MINERU_API_TOKEN` | `MINERU_API_TOKEN` | string (sensitive) | — | Required for PDF→MD |
+| `UNPAYWALL_EMAIL` | `PAPER_SEARCH_MCP_UNPAYWALL_EMAIL` | string | — | Optional, improves PDF acquisition |
+| `SEMANTIC_SCHOLAR_API_KEY` | `PAPER_SEARCH_MCP_SEMANTIC_SCHOLAR_API_KEY` | string (sensitive) | — | Optional, for paper-search-mcp CLI |
+
+Additional env vars for the external `paper-search-mcp` CLI (set via `~/.claude/settings.json` `env` section if needed):
+- `IEEE_API_KEY` — IEEE Xplore (paid source)
+- `ACM_API_KEY` — ACM Digital Library (paid source)
+
+## Paper Card Extraction Pattern
+
+`paper-card` reads the full `paper.md` and fills card templates directly. Both templates contain inline extraction rules (HTML comments and annotation blocks) that guide how to fill each section — no separate schema file needed.
+
+If the caller supports subagent dispatch, two independent extractions can run in parallel for cross-validation (same templates, same prompt). When only a single pass is available, the main agent fills the templates directly.
 
 ## Evals
 

@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
-"""
-Extract URLs from PDF metadata and annotations.
+# /// script
+# requires-python = ">=3.10"
+# dependencies = ["pymupdf"]
+# ///
+"""Extract URLs from PDF metadata and annotations.
 
 Scans PDF for:
 - Document metadata (URLs in info dict)
@@ -20,8 +23,7 @@ from pathlib import Path
 try:
     import fitz  # PyMuPDF
 except ImportError:
-    print("Error: PyMuPDF not installed. Run: pip install pymupdf")
-    sys.exit(1)
+    sys.exit("PyMuPDF not installed. Run with: uv run --script extract_urls_from_pdf.py")
 
 
 URL_PATTERN = re.compile(r'https?://[^\s<>"{}|\\^`\[\]]+')

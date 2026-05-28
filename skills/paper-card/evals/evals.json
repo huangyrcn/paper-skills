@@ -8,7 +8,7 @@
       "files": [],
       "expectations": [
         "The skill detects input as folder_slug (metadata.yaml exists under $PAPERS_DIR)",
-        "Two subagents are dispatched in parallel: structure extractor and evaluation extractor",
+        "Structured content is extracted from paper.md following the unified extraction schema (factual + evaluative in a single pass)",
         "card.md is generated using the quick card template",
         "card-deep.md is generated using the deep card template",
         "Both files contain YAML frontmatter with title, authors, year, venue",

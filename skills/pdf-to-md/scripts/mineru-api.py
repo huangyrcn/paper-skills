@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
-"""
-mineru-api.py - 使用 MinerU 精准解析 API 将 PDF 转换为 Markdown
+# /// script
+# requires-python = ">=3.10"
+# dependencies = ["requests"]
+# ///
+"""mineru-api.py - 使用 MinerU 精准解析 API 将 PDF 转换为 Markdown
 
 用法:
     python3 mineru-api.py <pdf_path> [--lang ch|en]
@@ -15,7 +18,10 @@ import shutil
 import sys
 import time
 import zipfile
-import requests
+try:
+    import requests
+except ImportError:
+    sys.exit("requests is required. Run with: uv run --script mineru-api.py")
 from pathlib import Path
 
 BASE_URL = "https://mineru.net/api/v4"
@@ -26,9 +32,10 @@ MODEL_VERSION = "vlm"
 
 def get_token():
     """从环境变量获取 API Token"""
-    token = os.environ.get("MINERU_API_TOKEN")
+    token = os.environ.get("CLAUDE_PLUGIN_OPTION_MINERU_API_TOKEN") or os.environ.get("MINERU_API_TOKEN")
     if not token:
-        print("Error: MINERU_API_TOKEN not set. Add to ~/.bashrc:")
+        print("Error: MINERU_API_TOKEN not set.")
+        print("  Configure via plugin settings or add to ~/.bashrc:")
         print("  export MINERU_API_TOKEN='your_token_here'")
         sys.exit(1)
     return token

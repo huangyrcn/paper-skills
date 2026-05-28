@@ -145,11 +145,11 @@ paper-card 当前只接受 `folder_slug` 作为输入，要求 `metadata.yaml` �
 
 ## 不变的部分
 
-- 双 subagent 并行提取（Structure Extractor + Evaluation Extractor）
+- 统一 extraction schema（事实 + 判断合并为单一 pass），调用方可选并行跑两份做交叉验证
 - card.md（快速概览）和 card-deep.md（深度分析）双模板
-- 综合规则：事实取保守、判断取平均、限制合并去重
+- 交叉验证规则：事实取保守、评分取平均、限制合并去重
 - 模板文件内容（英文模板保持不变）
-- subagent reference 文件内容
+- extraction-schema.md reference 文件内容
 
 ## 影响范围
 

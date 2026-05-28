@@ -83,44 +83,25 @@ Read both files:
 - `$PAPERS_DIR/{folder_slug}/metadata.yaml` — for frontmatter (title, authors, year, venue, url, code, tags)
 - `$PAPERS_DIR/{folder_slug}/paper/paper.md` — full paper text
 
-### Step 2: Dispatch two subagents in parallel
+### Step 2: Generate cards
 
-Launch both subagents simultaneously. Each subagent **must read the full paper.md file first** before extracting anything. Pass the file path explicitly in the subagent prompt.
+Read both templates (`templates/paper-card-deep.md` and `templates/paper-card-quick.md`). The deep card template contains inline extraction rules (in HTML comments and annotation blocks) that guide how to fill each section. Follow them.
 
-**Subagent prompt template** (adapt paths for each subagent):
+Read the full `paper.md` and fill both templates section by section:
 
-```
-Read the file: $PAPERS_DIR/{folder_slug}/paper/paper.md
+1. **Frontmatter**: Fill from `metadata.yaml` + your assessment (tags, builds_on, contrasts_with, ratings, verdict)
+2. **Deep card**: Fill all 16 sections following the template's inline extraction rules
+3. **Quick card**: Fill all sections — a condensed subset of the deep card content
 
-Then follow the instructions in: [reference file path]
+**Optional parallel execution**: If the caller supports subagent dispatch, run two independent extractions in parallel for cross-validation. Both read `paper.md` independently and follow the same templates. When two results are available, use cross-validation rules:
 
-Return the structured JSON output.
-```
+- Factual fields (problem, method, experiments): if both agree → high confidence; if they disagree → use the more conservative/verifiable version
+- Ratings: average the two scores, round to nearest integer; use the more specific reason
+- Limitations / tags / builds_on / contrasts_with: merge both lists, deduplicate
 
-**Subagent 1 — Structure Extractor** (`references/subagent-structure.md`):
-Extracts factual, verifiable content: problem definition, method pipeline, experimental setup, results, datasets, baselines.
+If subagents are not available, the main agent performs the extraction directly — same templates, single pass.
 
-**Subagent 2 — Evaluation Extractor** (`references/subagent-evaluation.md`):
-Extracts judgmental content: claim verification, evidence quality, limitations, novelty assessment, soundness, reproducibility concerns.
-
-Each subagent outputs a structured JSON object. Read their reference files for the exact schemas.
-
-### Step 3: Synthesize and fill templates
-
-The main agent combines both subagent outputs:
-
-1. **Frontmatter**: Fill from `metadata.yaml` + subagent-derived fields (tags, builds_on, contrasts_with, ratings)
-2. **Quick card**: Fill `templates/paper-card-quick.md` using synthesis
-3. **Deep card**: Fill `templates/paper-card-deep.md` using synthesis
-
-**Synthesis rules**:
-
-- For factual claims (method, results): if both subagents agree → high confidence; if they disagree → use the more conservative/verifiable version
-- For judgments (novelty, soundness): average the two assessments, round to nearest integer star rating
-- For limitations: merge both lists, deduplicate
-- For tags: combine both subagents' tag suggestions, deduplicate
-
-### Step 4: Write output files
+### Step 3: Write output files
 
 Write to:
 
@@ -145,14 +126,7 @@ Both files should be self-contained Markdown with YAML frontmatter.
 - [Quick card template](templates/paper-card-quick.md)
 - [Deep card template](templates/paper-card-deep.md)
 
-Read the templates before filling them. Preserve all section headers and structure exactly.
-
-## Subagent Reference Files
-
-- [Structure Extractor schema](references/subagent-structure.md)
-- [Evaluation Extractor schema](references/subagent-evaluation.md)
-
-Read these before dispatching subagents.
+Both templates contain inline extraction rules (HTML comments). Read them for guidance, but do NOT include them in the output. Preserve all section headers, numbering, annotations, and callout syntax exactly as they appear.
 
 ## Integration
 

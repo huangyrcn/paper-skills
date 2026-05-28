@@ -16,7 +16,7 @@ from pathlib import Path
 try:
     import yaml
 except ImportError:
-    sys.exit("pyyaml is required: pip install pyyaml")
+    sys.exit("pyyaml is required. Run with: uv run --script hydrate_raw.py")
 
 try:
     import requests
@@ -78,6 +78,49 @@ def _is_pdf_content(resp: requests.Response) -> bool:
     return resp.content[:4] == b"%PDF"
 
 
+def _extract_pdf_url_from_html(html: str) -> str | None:
+    """Extract PDF URL from publisher HTML page via meta tags or OJS patterns."""
+    import re
+
+    # citation_pdf_url meta tag (common across publishers)
+    m = re.search(
+        r'<meta\s+[^>]*name=["\']citation_pdf_url["\'][^>]*content=["\']([^"\']+)["\']',
+        html, re.IGNORECASE,
+    )
+    if m:
+        return m.group(1)
+
+    # OJS pattern: /article/download/{id}/{galley_id}
+    m = re.search(
+        r'(https?://[^"\'<>\s]+/article/download/\d+/\d+)',
+        html, re.IGNORECASE,
+    )
+    if m:
+        return m.group(1)
+
+    # Generic: look for PDF download links with common patterns
+    m = re.search(
+        r'(https?://[^"\'<>\s]+\.pdf(?:\?[^"\'<>\s]*)?)',
+        html, re.IGNORECASE,
+    )
+    if m:
+        return m.group(1)
+
+    return None
+
+
+def register_pdf(metadata_path: Path, pdf_source: Path) -> Path:
+    """Copy a manually obtained PDF into the paper directory and update assets."""
+    metadata, paper_dir, assets = ensure_assets(metadata_path)
+    pdf_path = paper_dir / "paper.pdf"
+    import shutil
+    shutil.copy2(pdf_source, pdf_path)
+    assets.setdefault("paper_pdf", {})
+    assets["paper_pdf"]["source"] = f"manual:{pdf_source.name}"
+    persist_metadata(metadata_path, metadata)
+    return pdf_path
+
+
 def download_pdf_asset(metadata_path: Path) -> Path:
     """Download PDF using URLs from metadata.yaml. Returns path to saved PDF."""
     metadata = load_metadata(metadata_path)
@@ -114,7 +157,7 @@ def download_pdf_asset(metadata_path: Path) -> Path:
     def _unpaywall_url():
         doi = aliases.get("doi")
         if doi and requests:
-            email = os.environ.get("PAPER_SEARCH_MCP_UNPAYWALL_EMAIL", "")
+            email = os.environ.get("CLAUDE_PLUGIN_OPTION_UNPAYWALL_EMAIL") or os.environ.get("PAPER_SEARCH_MCP_UNPAYWALL_EMAIL", "")
             if email:
                 try:
                     resp = requests.get(
@@ -130,6 +173,11 @@ def download_pdf_asset(metadata_path: Path) -> Path:
     # Priority 5: Publisher (direct URL)
     if pdf_url:
         download_attempts.append(("publisher", pdf_url))
+
+    # Priority 6: DOI landing page (may have citation_pdf_url meta tag)
+    doi = aliases.get("doi")
+    if doi:
+        download_attempts.append(("doi_page", f"https://doi.org/{doi}"))
 
     download_attempts.append(("unpaywall", "__DEFERRED__"))
 
@@ -150,6 +198,21 @@ def download_pdf_asset(metadata_path: Path) -> Path:
                     return pdf_path
                 elif resp.ok:
                     ct = resp.headers.get("content-type", "unknown")
+                    # If we got HTML, try extracting PDF URL from the page
+                    if "text/html" in ct:
+                        extracted = _extract_pdf_url_from_html(resp.text)
+                        if extracted:
+                            print(f"  ! {source}: got HTML, found PDF link: {extracted}")
+                            try:
+                                resp2 = requests.get(extracted, timeout=60, allow_redirects=True)
+                                if resp2.ok and len(resp2.content) > 1000 and _is_pdf_content(resp2):
+                                    pdf_path.write_bytes(resp2.content)
+                                    metadata.setdefault("assets", {}).setdefault("paper_pdf", {})
+                                    metadata["assets"]["paper_pdf"]["source"] = f"{source}-page"
+                                    persist_metadata(metadata_path, metadata)
+                                    return pdf_path
+                            except Exception as exc2:
+                                print(f"  ! {source}-page failed: {exc2}")
                     print(f"  ! {source}: not a PDF (content-type: {ct}, size: {len(resp.content)})")
             else:
                 subprocess.run(
@@ -314,10 +377,17 @@ def main() -> None:
     parser.add_argument("--skip-pdf", action="store_true", help="Skip PDF download")
     parser.add_argument("--skip-latex", action="store_true", help="Skip LaTeX download")
     parser.add_argument("--skip-normalize", action="store_true", help="Skip paper.md generation")
+    parser.add_argument("--pdf", type=str, default=None, help="Path to a manually obtained PDF to use instead of downloading")
     args = parser.parse_args()
 
+    metadata_path = Path(args.metadata).resolve()
+
+    if args.pdf:
+        register_pdf(metadata_path, Path(args.pdf).resolve())
+        print(f"✓ Registered manual PDF: {args.pdf}")
+
     run_pipeline(
-        Path(args.metadata).resolve(),
+        metadata_path,
         md_lang=args.md_lang,
         skip_pdf=args.skip_pdf,
         skip_latex=args.skip_latex,
