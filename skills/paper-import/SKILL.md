@@ -6,8 +6,9 @@ description: >
   "把这篇论文弄到本地"、"帮我搞定这篇论文"时触发。
   覆盖从搜索到下载到找代码的全流程。如果用户只需要搜索/确认论文身份，
   不需要下载，应使用 paper-search skill。
-  第一步（确定论文）始终执行；第二步（获取 PDF+markdown）默认开启；第三步（找代码仓库）默认关闭，用户明确要求时才开启。
-argument-hint: "<论文引用> [--no-acquire] [--with-repo]"
+  三步默认全部执行：确定论文 → 获取 PDF+markdown → 找代码仓库。
+  用 --no-acquire 跳过下载，--no-repo 跳过代码搜索。
+argument-hint: "<论文引用> [--no-acquire] [--no-repo]"
 ---
 
 # Paper Import
@@ -40,14 +41,14 @@ This skill does **not** own any artifacts directly. All work is delegated:
        ├── 用户传了 --no-acquire? ──→ 跳到 ③
        │
        ▼
-  ② paper-acquire（默认开启）
+  ② paper-acquire（默认执行）
        │
        ▼ 下载 PDF，转成 paper.md
        │
-       ├── 用户没传 --with-repo? ──→ 结束
+       ├── 用户传了 --no-repo? ──→ 结束
        │
        ▼
-  ③ paper-repo（默认关闭，--with-repo 开启）
+  ③ paper-repo（默认执行）
        │
        ▼ 搜索并 clone 代码仓库
 ```
@@ -55,14 +56,14 @@ This skill does **not** own any artifacts directly. All work is delegated:
 ## 用法
 
 ```bash
-# 最常见：确定论文 + 下载 PDF + 转 markdown
+# 全套：确定 + 下载 + 找代码（默认行为）
 paper-import "Attention Is All You Need"
 
 # 只确定论文身份，不下载
 paper-import "GAT" --no-acquire
 
-# 全套：确定 + 下载 + 找代码
-paper-import "10.48550/arxiv.2002.05287" --with-repo
+# 确定 + 下载，不找代码
+paper-import "10.48550/arxiv.2002.05287" --no-repo
 ```
 
 ## 参数
@@ -71,7 +72,7 @@ paper-import "10.48550/arxiv.2002.05287" --with-repo
 |------|------|------|
 | 第一个参数 | 论文引用（标题/DOI/arXiv/URL/模糊描述） | 必填 |
 | `--no-acquire` | 跳过 PDF 下载和 markdown 转换 | 不跳过 |
-| `--with-repo` | 启用代码仓库搜索 | 不启用 |
+| `--no-repo` | 跳过代码仓库搜索 | 不跳过（默认执行） |
 
 ## 各步骤职责
 
@@ -83,17 +84,17 @@ paper-import "10.48550/arxiv.2002.05287" --with-repo
 - 输出：`$PAPERS_DIR/{folder_slug}/metadata.yaml`
 - 失败处理：如果无法确定论文，停止并告知用户
 
-### Step 2: paper-acquire（默认开启）
+### Step 2: paper-acquire（默认执行）
 
 除非用户传了 `--no-acquire`，否则调用 `paper-acquire` skill。
 
 - 输入：`$PAPERS_DIR/{folder_slug}/metadata.yaml`
 - 输出：`$PAPERS_DIR/{folder_slug}/paper/paper.pdf` + `paper.md`
-- 失败处理：记录警告，继续下一步（如果开启了 repo）
+- 失败处理：记录警告，继续下一步（如果 repo 搜索开启）
 
-### Step 3: paper-repo（默认关闭）
+### Step 3: paper-repo（默认执行）
 
-只有用户明确传了 `--with-repo` 才调用 `paper-repo` skill。
+除非用户传了 `--no-repo`，否则调用 `paper-repo` skill。
 
 - 输入：`$PAPERS_DIR/{folder_slug}/metadata.yaml`
 - 输出：代码仓库 clone 到 `repo/`，搜索结果写入 metadata.yaml
@@ -109,5 +110,5 @@ paper-import "10.48550/arxiv.2002.05287" --with-repo
     paper.pdf            ← acquire 产出（除非 --no-acquire）
     paper.md             ← acquire 产出（除非 --no-acquire）
     paper_images/        ← acquire 产出（如果 PDF 含图片）
-  repo/                  ← repo 产出（仅 --with-repo）
+  repo/                  ← repo 产出（除非 --no-repo）
 ```

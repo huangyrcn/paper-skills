@@ -174,6 +174,13 @@ ask-search "{method_name} github" -e google -n 10
 ask-search "site:github.com {method_name}" -e google -n 10
 ```
 
+If GitHub search yields no high-confidence result, try general search (code may be on author homepage, project page, or as ZIP download):
+
+```bash
+ask-search "{paper_title} code download" -e google -n 5
+ask-search "{first_author} {method_name} code" -e google -n 5
+```
+
 ### Verify candidates (Step 3)
 
 For each candidate URL:

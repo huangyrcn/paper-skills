@@ -48,8 +48,17 @@ def extract_urls_from_metadata(doc: fitz.Document) -> list[dict]:
     return results
 
 
-def extract_urls_from_annotations(doc: fitz.Document) -> list[dict]:
-    """Extract URLs from PDF annotations (links)."""
+def extract_urls_from_annotations(
+    doc: fitz.Document, ref_start: int = 0,
+) -> list[dict]:
+    """Extract URLs from PDF annotations (links).
+
+    Args:
+        doc: PyMuPDF document.
+        ref_start: 0-based page index where References section begins.
+            Annotations on pages >= ref_start are flagged with
+            ``likely_reference: True``.
+    """
     results = []
 
     for page_num, page in enumerate(doc):
@@ -71,13 +80,31 @@ def extract_urls_from_annotations(doc: fitz.Document) -> list[dict]:
                     "url": uri,
                     "source": f"annotation.page{page_num + 1}",
                     "context": context[:300],
+                    "likely_reference": page_num >= ref_start and ref_start > 0,
                 })
 
     return results
 
 
+def _detect_references_page(doc: fitz.Document) -> int:
+    """Return the 0-based page index where References section starts.
+
+    Scans from the end looking for a heading like "References" / "Bibliography".
+    Returns 0 (conservative: no pages flagged) if not found.
+    """
+    heading_re = re.compile(
+        r"^\s*(references|bibliography|参考文献)\s*$",
+        re.IGNORECASE | re.MULTILINE,
+    )
+    for page_num in range(len(doc) - 1, -1, -1):
+        text = doc[page_num].get_text("text")
+        if heading_re.search(text):
+            return page_num
+    return 0
+
+
 def extract_urls_from_text(doc: fitz.Document) -> list[dict]:
-    """Scan full PDF text for URLs (especially github.com)."""
+    """Scan full PDF text for code-related URLs."""
     results = []
     seen_urls = set()
 
@@ -96,8 +123,25 @@ def extract_urls_from_text(doc: fitz.Document) -> list[dict]:
             end = min(len(text), idx + len(url) + 100)
             context = text[start:end].strip()
 
-            # Filter to code-related URLs
-            if "github.com" in url or "gitlab.com" in url or "bitbucket.org" in url:
+            url_lower = url.lower()
+            is_code_host = any(h in url_lower for h in (
+                "github.com", "gitlab.com", "bitbucket.org",
+            ))
+            is_homepage = any(h in url_lower for h in (
+                ".github.io", ".gitlab.io",
+                ".edu/", ".edu~", ".ac.uk", ".ac.jp", ".ac.cn",
+            ))
+            is_archive = any(url_lower.endswith(ext) for ext in (
+                ".zip", ".tar.gz", ".tar.bz2", ".tgz", ".7z", ".rar",
+            ))
+            ctx_lower = context.lower()
+            context_hit = any(kw in ctx_lower for kw in (
+                "code", "source", "repository", "github", "gitlab",
+                "implementation", "available at", "download",
+                "homepage", "project page", "demo",
+            ))
+
+            if is_code_host or is_homepage or is_archive or context_hit:
                 results.append({
                     "url": url,
                     "source": f"text.page{page_num + 1}",
@@ -111,6 +155,10 @@ def main():
     parser = argparse.ArgumentParser(description="Extract URLs from PDF")
     parser.add_argument("pdf_path", help="Path to PDF file")
     parser.add_argument("--json", action="store_true", help="Output as JSON")
+    parser.add_argument(
+        "--filter-refs", action="store_true",
+        help="Drop URLs likely from the References section",
+    )
     args = parser.parse_args()
 
     pdf_path = Path(args.pdf_path)
@@ -120,10 +168,15 @@ def main():
 
     doc = fitz.open(pdf_path)
 
+    ref_start = _detect_references_page(doc)
+
     all_results = []
     all_results.extend(extract_urls_from_metadata(doc))
-    all_results.extend(extract_urls_from_annotations(doc))
+    all_results.extend(extract_urls_from_annotations(doc, ref_start=ref_start))
     all_results.extend(extract_urls_from_text(doc))
+
+    if args.filter_refs:
+        all_results = [r for r in all_results if not r.get("likely_reference")]
 
     # Deduplicate by URL
     seen = set()
@@ -141,7 +194,8 @@ def main():
         else:
             print(f"Found {len(unique_results)} URLs:")
             for r in unique_results:
-                print(f"\n  URL: {r['url']}")
+                ref_tag = " [ref]" if r.get("likely_reference") else ""
+                print(f"\n  URL: {r['url']}{ref_tag}")
                 print(f"  Source: {r['source']}")
                 print(f"  Context: {r['context'][:100]}...")
 

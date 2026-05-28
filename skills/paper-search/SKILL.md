@@ -116,9 +116,22 @@ Note: The `download` and `read` subcommands are provided by the CLI but are not 
   "openalex": "W123456",
   "abstract": "...",
   "pdf_url": "https://...",
-  "confidence": "high"
+  "confidence": "high",
+  "year_sources": {"crossref": 2024, "semantic": 2025}
 }
 ```
+
+### 年份冲突处理
+
+多个源返回不同年份时，按以下优先级选择 `year`：
+
+1. **venue 名称中的年份**（如 "IJCAI 2025"），以 venue 年份为准
+2. **官方出版物页面**（OpenReview、ACM DL、IEEE Xplore 等）确认的年份
+3. **arXiv**：用会议年份而非上传年份（arXiv 通常早一年）
+4. **多数投票**：超过半数源一致的年份
+5. **取较新年份**：无法判断时取较新值
+
+将各源原始年份记入 `year_sources`（可选字段，脚本用它做交叉校验）。
 
 ### 调用脚本
 

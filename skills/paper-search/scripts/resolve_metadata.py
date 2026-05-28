@@ -250,7 +250,26 @@ def main():
         title = data["title"]
         authors = data["authors"]
         year = data.get("year")
+        year_sources = data.get("year_sources", {})
         venue = data.get("venue")
+
+        # Year conflict detection: warn if sources disagree
+        if year_sources and len(set(year_sources.values())) > 1:
+            print("WARNING: year conflict detected across sources:", file=sys.stderr)
+            for src, yr in sorted(year_sources.items()):
+                marker = " <-- selected" if yr == year else ""
+                print(f"  {src}: {yr}{marker}", file=sys.stderr)
+            if venue:
+                venue_year_match = re.search(r"(\d{4})", venue)
+                if venue_year_match:
+                    venue_yr = int(venue_year_match.group(1))
+                    if venue_yr != year:
+                        print(
+                            f"  WARNING: venue '{venue}' implies year {venue_yr}, "
+                            f"but selected year is {year}.",
+                            file=sys.stderr,
+                        )
+
         doi = data.get("doi")
         arxiv = data.get("arxiv")
         s2id = data.get("s2id")
