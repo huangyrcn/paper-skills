@@ -230,7 +230,7 @@ def main():
     ap.add_argument("--method", default=None,
                     help="Method name for folder slug (e.g., transformer, gat)")
     ap.add_argument("--publication-status", default=None,
-                    choices=["published", "accepted", "unknown"],
+                    choices=["published", "accepted", "submitted", "under_review", "preprint", "withdrawn", "unknown"],
                     help="Publication status")
     ap.add_argument("--venue-context", default=None,
                     help="Full venue description (e.g., 'International Conference on Learning Representations 2026')")
@@ -293,8 +293,9 @@ def main():
         confidence = data.get("confidence", "high")
         evidence = data.get("evidence", [])
         method = data.get("method")
+        _valid_statuses = ("published", "accepted", "submitted", "under_review", "preprint", "withdrawn", "unknown")
         publication_status = data.get("publication_status", "unknown")
-        if publication_status not in ("published", "accepted", "unknown"):
+        if publication_status not in _valid_statuses:
             print(f"WARNING: invalid publication_status '{publication_status}', falling back to 'unknown'", file=sys.stderr)
             publication_status = "unknown"
         venue_context = data.get("venue_context", "")
