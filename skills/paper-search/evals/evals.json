@@ -49,6 +49,21 @@
         "Results are returned with titles, authors, and years",
         "The skill presents results to the user rather than auto-generating metadata for all of them"
       ]
+    },
+    {
+      "id": 5,
+      "prompt": "帮我搜一下 Sculpting Subspaces: Constrained Full Fine-Tuning in LLMs for Continual Learning 这篇论文",
+      "expected_output": "Find the paper, detect its ICLR 2026 venue via web-kit, and generate metadata.yaml with correct venue and publication status.",
+      "files": [],
+      "expectations": [
+        "The skill uses web-kit (ask-search) to search for the paper title",
+        "The skill uses paper-search CLI with layered sources (arxiv,semantic,crossref then dblp,openalex)",
+        "The metadata.yaml contains venue: ICLR (not empty, not preprint)",
+        "The metadata.yaml contains year: 2026 (not 2025 from arXiv upload)",
+        "The metadata.yaml contains publication_status: accepted",
+        "The folder_slug starts with iclr2026 (not arxiv2025 or preprint2025)",
+        "The metadata.yaml contains an openreview URL"
+      ]
     }
   ]
 }

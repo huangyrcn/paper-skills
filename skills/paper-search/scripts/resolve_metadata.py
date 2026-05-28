@@ -95,6 +95,9 @@ def build_metadata(
     confidence: str = "high",
     evidence: Optional[list[str]] = None,
     method: Optional[str] = None,
+    publication_status: str = "unknown",
+    venue_context: str = "",
+    openreview_url: Optional[str] = None,
 ) -> dict[str, Any]:
     """Build the canonical metadata dict."""
     # Build canonical URL from available identifiers
@@ -133,8 +136,8 @@ def build_metadata(
             "authors": authors,
             "year": year,
             "venue": venue or "",
-            "venue_context": "",
-            "publication_status": "unknown",
+            "venue_context": venue_context,
+            "publication_status": publication_status,
             "abstract": abstract or "",
         },
         "urls": {
@@ -142,7 +145,7 @@ def build_metadata(
             "pdf": pdf_url,
             "doi": f"https://doi.org/{doi}" if doi else None,
             "pmc": None,
-            "openreview": None,
+            "openreview": openreview_url,
         },
         "acquisition_hints": {
             "pdf_sources": _build_pdf_sources(arxiv, pdf_url, doi),
@@ -226,6 +229,13 @@ def main():
     ap.add_argument("--abstract", default=None)
     ap.add_argument("--method", default=None,
                     help="Method name for folder slug (e.g., transformer, gat)")
+    ap.add_argument("--publication-status", default=None,
+                    choices=["published", "accepted", "unknown"],
+                    help="Publication status")
+    ap.add_argument("--venue-context", default=None,
+                    help="Full venue description (e.g., 'International Conference on Learning Representations 2026')")
+    ap.add_argument("--openreview", default=None,
+                    help="OpenReview URL")
     ap.add_argument("--confidence", default="high",
                     choices=["high", "medium", "low"])
     ap.add_argument("--evidence", nargs="*", default=[],
@@ -283,6 +293,12 @@ def main():
         confidence = data.get("confidence", "high")
         evidence = data.get("evidence", [])
         method = data.get("method")
+        publication_status = data.get("publication_status", "unknown")
+        if publication_status not in ("published", "accepted", "unknown"):
+            print(f"WARNING: invalid publication_status '{publication_status}', falling back to 'unknown'", file=sys.stderr)
+            publication_status = "unknown"
+        venue_context = data.get("venue_context", "")
+        openreview_url = data.get("openreview")
     else:
         title = args.title
         authors = [a.strip() for a in args.authors.split(",") if a.strip()]
@@ -301,6 +317,9 @@ def main():
         confidence = args.confidence
         evidence = args.evidence
         method = args.method
+        publication_status = args.publication_status or "unknown"
+        venue_context = args.venue_context or ""
+        openreview_url = args.openreview
 
     metadata = build_metadata(
         title=title, authors=authors, year=year, venue=venue,
@@ -308,7 +327,8 @@ def main():
         dblp=dblp, pmid=pmid, pmcid=pmcid,
         canonical_url=canonical_url, pdf_url=pdf_url,
         abstract=abstract, confidence=confidence, evidence=evidence,
-        method=method,
+        method=method, publication_status=publication_status,
+        venue_context=venue_context, openreview_url=openreview_url,
     )
 
     slug = metadata["folder_slug"]

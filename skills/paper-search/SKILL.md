@@ -26,6 +26,41 @@ This skill does **not**:
 - Generate reading notes (use `paper-card`)
 - Discover code repositories (use `paper-repo`)
 
+## Tools
+
+This skill uses two tools:
+
+| Tool | Role |
+|------|------|
+| `web-kit` (`ask-search`, `crwlr`) | Web search to locate/verify paper identity and extract venue info |
+| `paper-search` CLI | Query 23 academic sources for structured metadata (IDs, authors, abstract) |
+
+## Pipeline
+
+```
+Any input (title / DOI / arXiv / URL / description)
+  |
+  v
+Step 1: web-kit (mandatory for all inputs)
+  - Locate or verify the paper
+  - Extract venue info (OpenReview, conference pages, DBLP listings)
+  |
+  v
+Step 2: paper-search CLI (progressive, layered)
+  - Layer 1: arxiv,semantic,crossref → basic identity
+  - Layer 2 (if no venue): dblp,openalex → venue supplement
+  - Layer 3 (if still no venue): all sources
+  |
+  v
+Step 3: Merge + resolve conflicts
+  - Year: from CLI bib sources only
+  - Venue: web-kit primary, CLI extra field supplement
+  - IDs/Authors/Abstract: CLI (structured) > web-kit
+  |
+  v
+Step 4: resolve_metadata.py → metadata.yaml
+```
+
 ## 前置条件
 
 ### 1. 安装 paper-search CLI
@@ -38,12 +73,6 @@ paper-search sources 2>/dev/null || paper-search --version 2>/dev/null
 uv tool install paper-search-mcp --from "git+https://github.com/openags/paper-search-mcp.git"
 ```
 
-如果 `uv` 也未安装：
-
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
-
 ### 2. 环境变量
 
 | 变量 | 说明 | 默认值 |
@@ -52,11 +81,38 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 | `PAPER_SEARCH_MCP_UNPAYWALL_EMAIL` | Unpaywall 必须 | — |
 | `PAPER_SEARCH_MCP_SEMANTIC_SCHOLAR_API_KEY` | 提高 S2 限速 | — |
 
-`PAPERS_DIR` 未设置时默认 `~/docs/papers`。metadata.yaml 写入 `$PAPERS_DIR/{folder_slug}/metadata.yaml`。
+## Step 1: web-kit 搜索（所有输入必做）
 
-## CLI 命令
+所有输入都先用 web-kit 搜索。这一步的目的：
+1. 定位或验证论文身份
+2. 提取 venue 信息（OpenReview 页面、会议 virtual page、DBLP 列表）
+3. 对于模糊输入（DOI/arXiv/URL/描述），解析出具体论文
 
-### search — 搜索论文
+### 搜索策略
+
+| 输入类型 | web-kit 搜索方式 |
+|---------|-----------------|
+| 标题 | `ask-search "{title}"` |
+| DOI | `ask-search "{doi}"` |
+| arXiv ID | `ask-search "arxiv {arxiv_id}"` |
+| URL | `crwlr` 直接读取页面内容 |
+| 方法名 | `ask-search "{method} paper"` → 推断论文标题，可能需问用户上下文 |
+| 自然语言描述 | `ask-search "{description}"` → 用户确认是哪篇 |
+| 本地 PDF | 先检查 `$PAPERS_DIR` 是否已有该文件，已存在则直接读取 metadata.yaml |
+
+### 从 web-kit 结果提取
+
+重点关注：
+- **OpenReview 链接**：`openreview.net/forum?id=xxx` → 确认论文在 OpenReview 上
+- **会议 virtual page**：`iclr.cc/virtual/2026/poster/xxx` → 确认被会议收录
+- **DBLP 列表**：DBLP 搜索结果中的 venue 和 year
+- **论文标题和作者**：验证身份
+
+## Step 2: paper-search CLI（渐进式分层）
+
+用 Step 1 确定的论文标题，调用 CLI 查结构化学术元数据。
+
+### CLI 命令
 
 ```bash
 paper-search search "<query>" [-n 5] [-s arxiv,semantic,crossref] [-y 2020-2024]
@@ -69,96 +125,126 @@ paper-search search "<query>" [-n 5] [-s arxiv,semantic,crossref] [-y 2020-2024]
 | `-s, --sources` | all | 逗号分隔的源名称 |
 | `-y, --year` | — | 年份过滤（仅 Semantic Scholar） |
 
-**推荐源组合：**
-- 通用搜索：`-s arxiv,semantic,dblp,crossref,pubmed,openalex`
-- 生物医学：`-s pubmed,pmc,europepmc,biorxiv`
-- 快速定位：`-s semantic,crossref`（覆盖面广）
+### 渐进式源策略
 
-### download — 下载 PDF
-
+**Layer 1** — 基本身份（始终执行）：
 ```bash
-paper-search download <source> <paper_id> [-o ./downloads]
+paper-search search "<title>" -s arxiv,semantic,crossref -n 3
 ```
 
-### read — 提取全文
-
+**Layer 2** — 如果 Layer 1 没找到 venue，补充 venue-aware 源：
 ```bash
-paper-search read <source> <paper_id> [-o ./downloads]
+paper-search search "<title>" -s dblp,openalex -n 3
 ```
 
-### sources — 列出可用源
-
+**Layer 3** — 如果 Layer 2 也没找到 venue，全量搜索：
 ```bash
-paper-search sources
+paper-search search "<title>" -n 5
 ```
 
-Note: The `download` and `read` subcommands are provided by the CLI but are not used by this skill. PDF download is handled by `paper-acquire`.
+**"没找到 venue" 的判定**：以下情况视为没找到，需要进入下一层：
+- CLI 结果中 `venue` 字段为空
+- CLI `extra` 中 venue 为 `"CoRR"`（arXiv 预印本标记，不算正式 venue）
+- web-kit Step 1 已找到 venue（如 OpenReview/会议页面）→ CLI 只需 Layer 1 获取 IDs，不需要继续
 
-## 生成 metadata.yaml
+### 解析 CLI `extra` 字段
 
-搜索到论文后，用 `resolve_metadata.py` 生成结构化 metadata。
+venue 信息在 CLI 输出的 `extra` 字段里（字符串形式的 dict），需要解析：
 
-### 从 paper-search 结果组装 JSON
+| 源 | `extra` 中的 key | 示例 |
+|----|-----------------|------|
+| DBLP | `venue` | `{'venue': 'ICLR', 'year': '2020'}` |
+| Crossref | `container_title` | `{'container_title': 'Neurocomputing', 'publisher': 'Elsevier'}` |
 
-从搜索结果中提取以下字段，组装成 JSON 传给脚本：
+**注意**：DBLP 可能对已录取的论文仍显示 `venue: 'CoRR'`（arXiv 预印本标记），此时以 web-kit Step 1 的 venue 为准。
+
+## Step 3: 合并与冲突解决
+
+### Year（年份）
+
+**Year 完全由 CLI 的 bib 源决定**，按以下优先级：
+
+1. DBLP `extra` 中的 `year`
+2. Crossref `published_date`
+3. OpenAlex `published_date`
+4. arXiv `published_date`（首次提交日期）
+
+**arXiv 的 `updated_date` 忽略不用**——只用 `published_date`（首次提交年份）。
+web-kit 的 year 仅作参考，不参与决策。
+
+**tiebreaker**：对于未正式发表的 arXiv 预印本，如果多个源返回不同年份，取较新年份。已发表论文以 venue 年份为准，不存在 tiebreaker。
+
+### Venue（发表场所）
+
+- **web-kit 是 venue 的主要来源**（OpenReview、会议 virtual page、会议程序册）
+- CLI `extra` 字段作为补充（DBLP `venue` key、Crossref `container_title`）
+- 如果 DBLP 显示 `CoRR` 但 web-kit 找到会议页面，以 web-kit 为准
+
+### 其他字段
+
+- **IDs**（doi, arxiv, openalex, dblp, pmid）：CLI 结构化数据 > web-kit
+- **Authors**：CLI > web-kit（web-kit 可能截断）
+- **Abstract**：CLI > web-kit（web-kit 可能截断）
+
+## Step 4: 生成 metadata.yaml
+
+### 组装 JSON
+
+从搜索结果中组装 JSON 传给脚本：
 
 ```json
 {
   "title": "论文标题",
   "authors": ["Author One", "Author Two"],
-  "year": 2020,
+  "year": 2026,
   "venue": "ICLR",
   "method": "transformer",
   "doi": "10.xxx/xxx",
-  "arxiv": "2002.05287",
+  "arxiv": "2504.07097",
   "pmid": "12345678",
   "dblp": "conf/iclr/...",
   "openalex": "W123456",
   "abstract": "...",
   "pdf_url": "https://...",
   "confidence": "high",
-  "year_sources": {"crossref": 2024, "semantic": 2025}
+  "year_sources": {"dblp": 2026, "arxiv": 2025},
+  "publication_status": "accepted",
+  "venue_context": "International Conference on Learning Representations 2026",
+  "openreview": "https://openreview.net/forum?id=xxx"
 }
 ```
 
-### 年份冲突处理
+### publication_status 推断
 
-多个源返回不同年份时，按以下优先级选择 `year`：
-
-1. **venue 名称中的年份**（如 "IJCAI 2025"），以 venue 年份为准
-2. **官方出版物页面**（OpenReview、ACM DL、IEEE Xplore 等）确认的年份
-3. **arXiv**：用会议年份而非上传年份（arXiv 通常早一年）
-4. **多数投票**：超过半数源一致的年份
-5. **取较新年份**：无法判断时取较新值
-
-将各源原始年份记入 `year_sources`（可选字段，脚本用它做交叉校验）。
+| 证据 | publication_status |
+|------|-------------------|
+| web-kit 找到会议 virtual page 或 OpenReview poster/oral/spotlight | `"accepted"` |
+| DBLP key 在会议下（不是 CoRR） | `"published"` |
+| Crossref DOI 指向期刊/会议 | `"published"` |
+| 只有 arXiv / DBLP 显示 CoRR / 无 venue | `"unknown"` |
 
 ### 调用脚本
 
 ```bash
-echo '{"title":"...","authors":["A"],"year":2020}' | \
+echo '{"title":"...","authors":["A"],"year":2020,"publication_status":"accepted","venue_context":"...","openreview":"https://..."}' | \
   uv run --script "${SKILL_DIR}/scripts/resolve_metadata.py" --from-json --out "$PAPERS_DIR"
 ```
 
 **关于 `method` 字段：**
-- 你从标题和摘要推断方法名。例如 "Attention Is All You Need" → `"transformer"`，"Geom-GCN: ..." → `"geom-gcn"`
+- 从标题和摘要推断方法名。例如 "Attention Is All You Need" → `"transformer"`
 - 如果标题没有明确的方法名，省略 `method` 字段，脚本会用标题第一个有意义的词兜底
-- 推断不出就不要硬编，让脚本自动处理
 
 脚本自动生成：
 - `folder_slug`：`{venue}{year}-{method}-{first_author}`
-- `$PAPERS_DIR/{folder_slug}/metadata.yaml`：完整的 identity、bibliography、urls、acquisition_hints
+- `$PAPERS_DIR/{folder_slug}/metadata.yaml`
 
-## 输入类型处理
+## CLI 其他命令
 
-| 用户输入 | 处理方式 |
-|---------|---------|
-| 标题 | `paper-search search "标题"` |
-| DOI | `paper-search search "DOI" -s crossref,semantic` 或直接传给 resolve_metadata.py |
-| arXiv ID | `paper-search search "arXiv ID" -s arxiv` |
-| 方法名 | 先推断论文标题，再搜索。可能需要问用户要上下文 |
-| URL | 先判断学术 URL 还是普通网页。学术 URL 提取标题搜索 |
-| 本地 PDF | 先检查 `$PAPERS_DIR` 是否已有 |
+```bash
+paper-search download <source> <paper_id> [-o ./downloads]   # 由 paper-acquire 处理
+paper-search read <source> <paper_id> [-o ./downloads]        # 由 paper-acquire 处理
+paper-search sources                                          # 列出可用源
+```
 
 ## 可用源（23 个）
 
