@@ -111,9 +111,10 @@ Grep pattern="<标题关键词>" glob="*/metadata.yaml" path="<PAPERS_DIR 实际
 ```
 
 - 匹配到 → 读取 `$PAPERS_DIR/{folder_slug}/metadata.yaml`：
-  - 有 `assets` 和 `normalization` section → acquire 已完成，跳过
-  - 有 `repo_search.cloned_to` → repo 已完成，跳过
-  - 全部存在 → 直接报告"论文已导入"，结束
+  - `assets` 和 `normalization` section 存在 → acquire 已完成，跳过
+  - `repo_search.cloned_to` 存在且非空 → repo 已 clone，跳过
+  - `repo_search` 不存在或 `selected: null`（之前搜索无结果）→ 仍需执行 paper-repo
+  - acquire + repo 都确认完成 → 直接报告"论文已导入"，结束
 - 没匹配到 → 继续 Step 2
 
 ### Step 2: paper-search（仅当 Step 1 未找到匹配时执行）
