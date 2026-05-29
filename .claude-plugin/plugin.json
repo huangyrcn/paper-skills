@@ -1,7 +1,7 @@
 {
   "name": "paper-skills",
   "description": "Academic paper workflow skills: search, acquire, read notes, repo discovery, import, and PDF-to-markdown conversion.",
-  "version": "1.4.5",
+  "version": "1.4.6",
   "author": {
     "name": "paper-skills"
   },
