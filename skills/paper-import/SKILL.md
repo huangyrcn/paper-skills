@@ -34,28 +34,28 @@ This skill does **not** own any artifacts directly. All work is delegated:
 用户输入（标题/DOI/链接/模糊描述）
        │
        ▼
-  ① 解析 PAPERS_DIR（环境变量 → 实际路径）
+  Step 0: 解析 PAPERS_DIR（环境变量 → 实际路径）
        │
        ▼
-  ② 快速去重（目录名匹配 → 身份验证 → 产出验证 → 结构修复）
+  Step 1: 快速去重（目录名匹配 → 身份验证 → 产出验证 → 结构修复）
        │
        ├── 身份匹配 + 产出完整？──→ 报告"已导入"，结束
        ├── 身份匹配 + 部分缺失？──→ 只执行缺失的步骤
        │
        ▼
-  ③ paper-search（确定论文身份）
+  Step 2: paper-search（确定论文身份）
        │
        ▼ 生成 metadata.yaml
        │
-       ├── 用户传了 --no-acquire? ──→ 跳到 ⑤
+       ├── 用户传了 --no-acquire? ──→ 跳到 Step 4
        │
        ▼
-  ④ paper-acquire（下载 PDF + 转 markdown）
+  Step 3: paper-acquire（下载 PDF + 转 markdown）
        │
        ├── 用户传了 --no-repo? ──→ 结束
        │
        ▼
-  ⑤ paper-repo（搜索并 clone 代码仓库）
+  Step 4: paper-repo（搜索并 clone 代码仓库）
 ```
 
 ## 用法
