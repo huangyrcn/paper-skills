@@ -37,9 +37,10 @@ This skill does **not** own any artifacts directly. All work is delegated:
   ① 解析 PAPERS_DIR（环境变量 → 实际路径）
        │
        ▼
-  ② 快速去重：Grep 搜索已导入的论文
+  ② 快速去重（目录名匹配 → 身份验证 → 产出验证 → 结构修复）
        │
-       ├── 找到匹配？──→ 检查已有产出，跳过已完成的步骤，报告给用户
+       ├── 身份匹配 + 产出完整？──→ 报告"已导入"，结束
+       ├── 身份匹配 + 部分缺失？──→ 只执行缺失的步骤
        │
        ▼
   ③ paper-search（确定论文身份）
@@ -49,12 +50,12 @@ This skill does **not** own any artifacts directly. All work is delegated:
        ├── 用户传了 --no-acquire? ──→ 跳到 ⑤
        │
        ▼
-  ④ paper-acquire（默认执行，先检查本地已有产出）
+  ④ paper-acquire（下载 PDF + 转 markdown）
        │
        ├── 用户传了 --no-repo? ──→ 结束
        │
        ▼
-  ⑤ paper-repo（默认执行，先检查本地已有产出）
+  ⑤ paper-repo（搜索并 clone 代码仓库）
 ```
 
 ## 用法
@@ -88,31 +89,36 @@ paper-import "10.48550/arxiv.2002.05287" --no-repo
 
 ### Step 1: 快速去重（必须在 paper-search 之前执行）
 
-拿到 `$PAPERS_DIR` 实际路径后，**立即**检查已导入的论文。先列目录名匹配（快），再按需读文件（准）：
+拿到 `$PAPERS_DIR` 实际路径后，**立即**检查已导入的论文：
 
-**方法 A — 目录名匹配（优先，一条命令）：**
+**1a — 目录名匹配（快速粗筛）：**
 
-用 Bash tool 执行：
-```bash
-ls "<PAPERS_DIR 实际路径>"
-```
+列出 `$PAPERS_DIR` 下所有文件夹名，查找包含论文关键词的 folder_slug（如 `iclr2026-mf-gia-zhuo` 包含 `mf-gia`）。
+如果目录名没匹配到，用 Grep tool 搜 `*/metadata.yaml` 的 title 字段兜底。
 
-从输出中查找包含论文关键词的 folder_slug（如 `iclr2026-mf-gia-zhuo` 包含 `mf-gia`）。
+**1b — 身份验证（确认是同一篇论文）：**
 
-**方法 B — 文件内容匹配（A 没找到时）：**
+读取匹配到的 `metadata.yaml`，验证：
+- `identity.aliases` 中的 arXiv ID / DOI 与用户输入一致（如有）
+- `bibliography.title` 与用户查询的论文标题匹配
 
-用 Grep tool 搜索（注意：网络盘上可能较慢）：
-```
-Grep pattern="<标题关键词>" glob="*/metadata.yaml" path="<PAPERS_DIR 实际路径>"
-```
+如果身份不匹配（同名不同论文），视为未找到，继续 Step 2。
 
-- 匹配到 → 读取 `$PAPERS_DIR/{folder_slug}/metadata.yaml`，然后**验证实际文件**：
-  - `paper/paper.pdf` 存在且 >1KB → acquire PDF 已完成
-  - `paper/paper.md` 存在且 >500 字符 → acquire 转换已完成
-  - `repo/` 目录存在且非空 → repo 已 clone
-  - metadata 说有但实际文件缺失/损坏 → 视为未完成，重新执行对应步骤
-  - 全部验证通过 → 直接报告"论文已导入"，结束
-- 没匹配到 → 继续 Step 2
+**1c — 产出验证（确认文件确实属于这篇论文）：**
+
+身份确认后，验证实际产出：
+- `paper/paper.pdf`：存在且 >1KB。如果 `hydrate_raw.py` 的 `_verify_pdf_identity()` 可用，用它验证 PDF 第一页标题与 metadata 一致
+- `paper/paper.md`：存在且 >500 字符
+- `repo/`：存在且非空。检查 `repo_search.selected.url` 与实际 clone 的 remote 一致
+
+**1d — 结构修复（metadata 损坏时修复，不重跑）：**
+
+如果 metadata.yaml 有结构问题（如 legacy 字段嵌套在错误的层级、schema 外的字段），直接修复 YAML 结构，而不是重新跑 paper-search 管线。论文数据已经存在，只是元数据格式有误。
+
+**判断结果：**
+- 身份验证通过 + 产出全部正确 → 报告"论文已导入"，结束
+- 身份验证通过 + 部分产出缺失/损坏 → 只执行缺失的步骤（跳过已完成的）
+- 身份验证失败 → 继续 Step 2（完整管线）
 
 ### Step 2: paper-search（仅当 Step 1 未找到匹配时执行）
 
