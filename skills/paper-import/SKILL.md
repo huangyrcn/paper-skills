@@ -34,23 +34,27 @@ This skill does **not** own any artifacts directly. All work is delegated:
 用户输入（标题/DOI/链接/模糊描述）
        │
        ▼
-  ① paper-search（始终执行）
-       │
-       ▼ 确定论文身份，生成 metadata.yaml
-       │
-       ├── 用户传了 --no-acquire? ──→ 跳到 ③
+  ① 解析 PAPERS_DIR（环境变量 → 实际路径）
        │
        ▼
-  ② paper-acquire（默认执行）
+  ② 快速去重：Grep 搜索已导入的论文
        │
-       ▼ 下载 PDF，转成 paper.md
+       ├── 找到匹配？──→ 检查已有产出，跳过已完成的步骤，报告给用户
+       │
+       ▼
+  ③ paper-search（确定论文身份）
+       │
+       ▼ 生成 metadata.yaml
+       │
+       ├── 用户传了 --no-acquire? ──→ 跳到 ⑤
+       │
+       ▼
+  ④ paper-acquire（默认执行，先检查本地已有产出）
        │
        ├── 用户传了 --no-repo? ──→ 结束
        │
        ▼
-  ③ paper-repo（默认执行）
-       │
-       ▼ 搜索并 clone 代码仓库
+  ⑤ paper-repo（默认执行，先检查本地已有产出）
 ```
 
 ## 用法
@@ -76,7 +80,31 @@ paper-import "10.48550/arxiv.2002.05287" --no-repo
 
 ## 各步骤职责
 
-### Step 1: paper-search（始终执行）
+### Step 0: 解析 $PAPERS_DIR
+
+`$PAPERS_DIR` 是环境变量，需要先解析为实际路径再使用。用 PowerShell tool 执行：
+
+```
+$env:PAPERS_DIR
+```
+
+拿到结果后（如 `Y:\papers`），后续步骤直接用这个路径，不要再重复解析。
+
+### Step 1: 快速去重（必须在 paper-search 之前执行）
+
+拿到 `$PAPERS_DIR` 实际路径后，**立即**用 Grep tool 搜索已导入的论文：
+
+```
+Grep pattern="<论文标题的 2-3 个关键词>" glob="*/metadata.yaml" path="<PAPERS_DIR 实际路径>"
+```
+
+- 匹配到 → 读取对应的 metadata.yaml，获取 folder_slug，检查已有产出：
+  - `paper/paper.pdf` 存在 → 跳过 acquire
+  - `repo/` 存在 → 跳过 repo
+  - 全部存在 → 直接报告"论文已导入"，结束
+- 没匹配到 → 继续 Step 2
+
+### Step 2: paper-search（仅当 Step 1 未找到匹配时执行）
 
 调用 `paper-search` skill。
 
@@ -84,10 +112,7 @@ paper-import "10.48550/arxiv.2002.05287" --no-repo
 - 输出：`$PAPERS_DIR/{folder_slug}/metadata.yaml`
 - 失败处理：如果无法确定论文，停止并告知用户
 
-**解析出标题后，用 Grep tool 搜索 `$PAPERS_DIR` 下所有 `*/metadata.yaml`，匹配标题关键词。**
-如果匹配到已有论文，获取其 folder_slug，跳过后续步骤中已存在的产出（见 Step 2/3）。
-
-### Step 2: paper-acquire（默认执行）
+### Step 3: paper-acquire（默认执行）
 
 除非用户传了 `--no-acquire`，否则调用 `paper-acquire` skill。
 
@@ -97,7 +122,7 @@ paper-import "10.48550/arxiv.2002.05287" --no-repo
 - 输出：`$PAPERS_DIR/{folder_slug}/paper/paper.pdf` + `paper.md`
 - 失败处理：记录警告，继续下一步（如果 repo 搜索开启）
 
-### Step 3: paper-repo（默认执行）
+### Step 4: paper-repo（默认执行）
 
 除非用户传了 `--no-repo`，否则调用 `paper-repo` skill。
 
