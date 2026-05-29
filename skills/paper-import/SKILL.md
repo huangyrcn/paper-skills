@@ -82,11 +82,7 @@ paper-import "10.48550/arxiv.2002.05287" --no-repo
 
 ### Step 0: 解析 $PAPERS_DIR
 
-`$PAPERS_DIR` 是环境变量，需要先解析为实际路径再使用。用 PowerShell tool 执行：
-
-```
-$env:PAPERS_DIR
-```
+`$PAPERS_DIR` 是环境变量（plugin settings 或系统环境变量），需要先解析为实际路径。解析方式不限，拿到路径即可。
 
 拿到结果后（如 `Y:\papers`），后续步骤直接用这个路径，不要再重复解析。
 
@@ -110,11 +106,14 @@ ls "<PAPERS_DIR 实际路径>"
 Grep pattern="<标题关键词>" glob="*/metadata.yaml" path="<PAPERS_DIR 实际路径>"
 ```
 
-- 匹配到 → 读取 `$PAPERS_DIR/{folder_slug}/metadata.yaml`：
-  - `assets` 和 `normalization` section 存在 → acquire 已完成，跳过
-  - `repo_search.cloned_to` 存在且非空 → repo 已 clone，跳过
-  - `repo_search` 不存在或 `selected: null`（之前搜索无结果）→ 仍需执行 paper-repo
-  - acquire + repo 都确认完成 → 直接报告"论文已导入"，结束
+- 匹配到 → 读取 `$PAPERS_DIR/{folder_slug}/metadata.yaml`，**验证结构是否正确**：
+  - `identity`、`bibliography`、`urls`、`acquisition_hints` 应为根级字段（缩进 0）
+  - 如果这些字段出现在其他字段内部（如嵌套在 `acquisition_hints` 内），说明 YAML 结构损坏，**视为未导入**，重新执行全流程
+  - 结构正确后，检查产出：
+    - `assets` 和 `normalization` 存在 → acquire 已完成，跳过
+    - `repo_search.cloned_to` 存在且非空 → repo 已 clone，跳过
+    - `repo_search` 不存在或 `selected: null` → 仍需执行 paper-repo
+    - acquire + repo 都确认完成 → 直接报告"论文已导入"，结束
 - 没匹配到 → 继续 Step 2
 
 ### Step 2: paper-search（仅当 Step 1 未找到匹配时执行）

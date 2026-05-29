@@ -85,7 +85,6 @@ uv tool install paper-search-mcp --from "git+https://github.com/openags/paper-se
 | `PAPER_SEARCH_MCP_SEMANTIC_SCHOLAR_API_KEY` | 提高 S2 限速 | — |
 
 > **运行时路径解析**: `$PAPERS_DIR` 是环境变量，脚本调用前需解析为实际路径。
-> 用 PowerShell tool 执行 `$env:PAPERS_DIR` 获取路径，后续命令中直接使用该路径。
 
 ## Step 1: 输入路由
 
