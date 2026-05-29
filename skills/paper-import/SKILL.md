@@ -92,13 +92,25 @@ $env:PAPERS_DIR
 
 ### Step 1: 快速去重（必须在 paper-search 之前执行）
 
-拿到 `$PAPERS_DIR` 实际路径后，**立即**用 Grep tool 搜索已导入的论文：
+拿到 `$PAPERS_DIR` 实际路径后，**立即**检查已导入的论文。先列目录名匹配（快），再按需读文件（准）：
 
-```
-Grep pattern="<论文标题的 2-3 个关键词>" glob="*/metadata.yaml" path="<PAPERS_DIR 实际路径>"
+**方法 A — 目录名匹配（优先，一条命令）：**
+
+用 Bash tool 执行：
+```bash
+ls "<PAPERS_DIR 实际路径>"
 ```
 
-- 匹配到 → 读取对应的 metadata.yaml，获取 folder_slug，检查已有产出：
+从输出中查找包含论文关键词的 folder_slug（如 `iclr2026-mf-gia-zhuo` 包含 `mf-gia`）。
+
+**方法 B — 文件内容匹配（A 没找到时）：**
+
+用 Grep tool 搜索（注意：网络盘上可能较慢）：
+```
+Grep pattern="<标题关键词>" glob="*/metadata.yaml" path="<PAPERS_DIR 实际路径>"
+```
+
+- 匹配到 → 读取对应的 metadata.yaml，检查已有产出：
   - `paper/paper.pdf` 存在 → 跳过 acquire
   - `repo/` 存在 → 跳过 repo
   - 全部存在 → 直接报告"论文已导入"，结束
