@@ -527,6 +527,12 @@ def run_pipeline(
 
 
 def main() -> None:
+    # Ensure Unicode output works on Windows (GBK consoles lack ✓, etc.)
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except OSError:
+        pass
+
     parser = argparse.ArgumentParser(description="Hydrate the canonical raw bundle for a resolved paper")
     parser.add_argument("--metadata", "-m", required=True, help="Path to metadata.yaml")
     parser.add_argument("--md-lang", default="en", choices=["en", "ch"], help="Language hint for PDF normalization")

@@ -35,7 +35,7 @@ This skill does **not**:
 
 ```bash
 # MinerU API（需要 MINERU_API_TOKEN）
-python3 "${SKILL_DIR}/scripts/mineru-api.py" <pdf_path> [-l lang]
+uv run --script "${SKILL_DIR}/scripts/mineru-api.py" <pdf_path> [-l lang]
 
 # marker 本地（不需要 token）
 marker <pdf_path> --output_dir <output_dir>

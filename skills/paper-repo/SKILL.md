@@ -100,10 +100,20 @@ repo_search:
 - User passes `--no-clone` flag
 
 ```bash
-# Clone command
+# Clone command (use Bash tool, not PowerShell)
 cd $PAPERS_DIR/{folder_slug}
 git clone {repo_url} repo/
 ```
+
+> **Windows / NTFS**: Some repos contain paths with characters invalid on NTFS
+> (e.g. `:` in timestamps). If `git clone` checkout fails with path errors:
+> download the repo as a zip archive instead, do **not** extract it.
+> Record in metadata.yaml:
+>
+> ```yaml
+> cloned_to: "repo.zip"
+> clone_note: "Archive only — contains NTFS-incompatible paths"
+> ```
 
 After cloning, update `cloned_to` field in metadata.yaml.
 
@@ -114,7 +124,7 @@ After cloning, update `cloned_to` field in metadata.yaml.
 Extract URLs from PDF metadata and annotations.
 
 ```bash
-python3 "${SKILL_DIR}/scripts/extract_urls_from_pdf.py" $PAPERS_DIR/{folder_slug}/paper/paper.pdf
+uv run --script "${SKILL_DIR}/scripts/extract_urls_from_pdf.py" $PAPERS_DIR/{folder_slug}/paper/paper.pdf
 ```
 
 Output: JSON list of URLs found in PDF with source annotation.
@@ -124,7 +134,7 @@ Output: JSON list of URLs found in PDF with source annotation.
 Extract code-related links from paper.md with surrounding context.
 
 ```bash
-python3 "${SKILL_DIR}/scripts/extract_code_links_from_md.py" $PAPERS_DIR/{folder_slug}/paper/paper.md
+uv run --script "${SKILL_DIR}/scripts/extract_code_links_from_md.py" $PAPERS_DIR/{folder_slug}/paper/paper.md
 ```
 
 Output: JSON list of code links with context lines.

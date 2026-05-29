@@ -112,7 +112,8 @@ if identity.aliases.doi exists and no PDF yet:
 
 ```bash
 # 脚本内部自动选择后端，无需手动指定
-python3 "${SKILL_DIR}/scripts/hydrate_raw.py" --metadata metadata.yaml --md-lang en
+uv run --script "${SKILL_DIR}/scripts/hydrate_raw.py" \
+  --metadata metadata.yaml --md-lang en
 ```
 
 ### 4. Update metadata.yaml
@@ -149,7 +150,7 @@ Read [references/raw-layout.md](references/raw-layout.md) for directory structur
 一键完成 acquire 全流程：下载 PDF、获取 LaTeX（如有）、生成 paper.md、记录 repo hints。
 
 ```bash
-python3 "${SKILL_DIR}/scripts/hydrate_raw.py" \
+uv run --script "${SKILL_DIR}/scripts/hydrate_raw.py" \
   --metadata "$PAPERS_DIR/{folder_slug}/metadata.yaml" \
   --md-lang en
 ```
@@ -166,6 +167,8 @@ python3 "${SKILL_DIR}/scripts/hydrate_raw.py" \
 仓库搜索由 `paper-repo` 负责，本脚本不处理。
 
 适合需要一次性完成所有步骤的场景；如果需要逐步控制（如只下载 PDF 不转 markdown），按上面的手动流程操作。
+
+> **Windows**: 始终通过 `uv run --script` 运行 Python 脚本（而非 `python3`）。
 
 ## Dependencies
 

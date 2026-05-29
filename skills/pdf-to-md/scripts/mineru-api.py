@@ -204,6 +204,12 @@ def download_and_extract(zip_url: str, output_dir: Path, stem: str) -> Path:
 
 
 def main():
+    # Ensure Unicode output works on Windows (GBK consoles)
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except OSError:
+        pass
+
     parser = argparse.ArgumentParser(description="MinerU API PDF 转 Markdown")
     parser.add_argument("pdf_path", help="PDF 文件路径")
     parser.add_argument("--lang", "-l", default="en", choices=["ch", "en"],

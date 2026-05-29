@@ -84,9 +84,14 @@ paper-import "10.48550/arxiv.2002.05287" --no-repo
 - 输出：`$PAPERS_DIR/{folder_slug}/metadata.yaml`
 - 失败处理：如果无法确定论文，停止并告知用户
 
+**解析出标题后，用 Grep tool 搜索 `$PAPERS_DIR` 下所有 `*/metadata.yaml`，匹配标题关键词。**
+如果匹配到已有论文，获取其 folder_slug，跳过后续步骤中已存在的产出（见 Step 2/3）。
+
 ### Step 2: paper-acquire（默认执行）
 
 除非用户传了 `--no-acquire`，否则调用 `paper-acquire` skill。
+
+**先检查本地是否已存在**：如果 `$PAPERS_DIR/{folder_slug}/paper/paper.pdf` 已存在（文件 >1KB），跳过下载；如果 `paper.md` 也已存在，跳过整个 acquire 步骤并告知用户。
 
 - 输入：`$PAPERS_DIR/{folder_slug}/metadata.yaml`
 - 输出：`$PAPERS_DIR/{folder_slug}/paper/paper.pdf` + `paper.md`
@@ -95,6 +100,8 @@ paper-import "10.48550/arxiv.2002.05287" --no-repo
 ### Step 3: paper-repo（默认执行）
 
 除非用户传了 `--no-repo`，否则调用 `paper-repo` skill。
+
+**先检查本地是否已存在**：如果 `$PAPERS_DIR/{folder_slug}/repo/` 已存在（目录非空），跳过整个 repo 步骤并告知用户。
 
 - 输入：`$PAPERS_DIR/{folder_slug}/metadata.yaml`
 - 输出：代码仓库 clone 到 `repo/`，搜索结果写入 metadata.yaml
