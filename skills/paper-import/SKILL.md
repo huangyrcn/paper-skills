@@ -110,9 +110,9 @@ ls "<PAPERS_DIR 实际路径>"
 Grep pattern="<标题关键词>" glob="*/metadata.yaml" path="<PAPERS_DIR 实际路径>"
 ```
 
-- 匹配到 → 读取对应的 metadata.yaml，检查已有产出：
-  - `paper/paper.pdf` 存在 → 跳过 acquire
-  - `repo/` 存在 → 跳过 repo
+- 匹配到 → 读取 `$PAPERS_DIR/{folder_slug}/metadata.yaml`：
+  - 有 `assets` 和 `normalization` section → acquire 已完成，跳过
+  - 有 `repo_search.cloned_to` → repo 已完成，跳过
   - 全部存在 → 直接报告"论文已导入"，结束
 - 没匹配到 → 继续 Step 2
 
