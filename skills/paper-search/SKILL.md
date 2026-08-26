@@ -73,8 +73,11 @@ This skill does **not**:
 paper-search sources 2>/dev/null || paper-search --version 2>/dev/null
 
 # 未安装则执行
-uv tool install paper-search-mcp --from "git+https://github.com/openags/paper-search-mcp.git"
+uv tool install paper-search-mcp --from "${SKILL_DIR}/../../vendor/paper-search-mcp"
 ```
+
+`paper-search-mcp` 源码随本插件以普通目录完整提供；不要在运行时从 Git
+获取。固定 commit / tree 见 [pin record](../../vendor/PAPER_SEARCH_MCP_PIN.json)。
 
 ### 2. 环境变量
 

@@ -70,7 +70,7 @@ uv run --script "${SKILL_DIR}/scripts/mineru-api.py" paper.pdf -l en
 
 ## External Dependencies
 
-- **paper-search CLI**: `uv tool install paper-search-mcp --from "git+https://github.com/openags/paper-search-mcp.git"`
+- **paper-search CLI**: complete source is tracked at `vendor/paper-search-mcp`; from the `paper-search` skill use `uv tool install paper-search-mcp --from "${SKILL_DIR}/../../vendor/paper-search-mcp"`. The pinned source identity is in `vendor/PAPER_SEARCH_MCP_PIN.json`.
 - **MinerU API**: requires `MINERU_API_TOKEN` — configure via plugin settings (recommended) or env var
 - **web-kit skill** (separate plugin): used for PDF download (`wget`, `cdp-download`) and repo page scraping (`crwlr`)
 

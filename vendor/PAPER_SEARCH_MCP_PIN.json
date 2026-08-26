@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "repository": "https://github.com/openags/paper-search-mcp",
+  "commit": "234678ab231074a7977320978ee0496dcdaddd1f",
+  "tree": "271796e082b75fa703e913cd39ffd35062060536",
+  "path": "vendor/paper-search-mcp",
+  "file_count": 73,
+  "ref_observed": "main",
+  "imported_on": "2026-08-25",
+  "nested_git_metadata_removed": true
+}
