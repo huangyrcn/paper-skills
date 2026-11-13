@@ -24,6 +24,7 @@ pdf-to-md is a utility called by paper-acquire
 | `paper-card` | Structured reading notes via extraction + template filling | `card.md`, `card-deep.md` |
 | `paper-repo` | Code repository discovery + verification + clone | `repo/`, `repo_search` section in metadata.yaml |
 | `pdf-to-md` | PDF→Markdown via MinerU API (called by paper-acquire) | `.md` + `_images/` |
+| `openreview-fetch` | Standalone: budgeted, read-only bulk reads of OpenReview forums (not part of the pipeline) | In-page data; no files written |
 
 ## Key Conventions
 

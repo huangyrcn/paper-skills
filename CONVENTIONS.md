@@ -38,3 +38,4 @@ pdf-to-md is a utility used by paper-acquire
 | paper-card | Reading notes | card.md, card-deep.md |
 | paper-repo | Repository discovery | repo_search in metadata.yaml, repo/ |
 | pdf-to-md | PDF→Markdown utility | (utility, no persistent artifacts) |
+| openreview-fetch | OpenReview bulk reads within the rate limit (standalone) | (no persistent artifacts) |
